@@ -87,13 +87,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    let mounted = true;
+
+    const initSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
-        await fetchProfile(u.id);
-        await fetchIsAdmin(u.id);
-        await refreshProfiles();
+        await Promise.all([fetchProfile(u.id), fetchIsAdmin(u.id), refreshProfiles()]);
+      }
+      if (mounted) setLoading(false);
+    };
+
+    initSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        // Fire and forget — don't await inside auth callback
+        fetchProfile(u.id);
+        fetchIsAdmin(u.id);
+        refreshProfiles();
       } else {
         setProfile(null);
         setIsAdmin(false);
@@ -102,18 +119,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) {
-        fetchProfile(u.id);
-        fetchIsAdmin(u.id);
-        refreshProfiles();
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (emailOrUsername: string, password: string) => {

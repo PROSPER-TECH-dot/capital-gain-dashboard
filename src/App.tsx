@@ -23,6 +23,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminTransactions from "./pages/admin/Transactions";
 import AdminGiftCodes from "./pages/admin/GiftCodes";
 import AdminSettings from "./pages/admin/Settings";
+import TransactionHistory from "./pages/TransactionHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const AppRoutes = () => {
         <Route path="/change-password" element={user ? <ChangePassword /> : <Navigate to="/" />} />
         <Route path="/profile-view" element={user ? <ProfileView /> : <Navigate to="/" />} />
         <Route path="/gift-code" element={user ? <GiftCodePage /> : <Navigate to="/" />} />
+        <Route path="/history" element={user ? <TransactionHistory /> : <Navigate to="/" />} />
         <Route path="/app" element={<AppPage />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/admin" element={user ? <AdminDashboard /> : <Navigate to="/" />} />

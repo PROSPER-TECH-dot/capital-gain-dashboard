@@ -51,14 +51,25 @@ const HomePage = () => {
       {notification && <Notification message={notification} onClose={() => setNotification(null)} />}
 
       <div className="relative w-full h-44 overflow-hidden rounded-b-3xl">
-        {heroImages.map((img, i) => (
-          <img key={`${i}-${currentImage}`} src={img} alt="Investment"
-            className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-in-out ${
-              i === currentImage ? 'translate-x-0' : i < currentImage || (currentImage === 0 && i === heroImages.length - 1) ? '-translate-x-full' : 'translate-x-full'
-            }`} />
-        ))}
-        <div className="absolute inset-0 gradient-hero opacity-60" />
-        <div className="absolute inset-0 flex items-center justify-center">
+        {heroImages.map((img, i) => {
+          const isActive = i === currentImage;
+          const isPrev = i === (currentImage - 1 + heroImages.length) % heroImages.length;
+          return (
+            <img key={i} src={img} alt="Investment"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                transform: isActive ? 'translateX(0%)' : isPrev ? 'translateX(-100%)' : 'translateX(100%)',
+                transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                zIndex: isActive ? 2 : 1,
+              }} />
+          );
+        })}
+        <div className="absolute inset-0 gradient-hero opacity-60 z-[3]" />
+        <div className="absolute inset-0 flex items-center justify-center z-[4]">
           <h1 className="text-2xl font-bold font-heading text-primary-foreground drop-shadow-lg">{settings.website_name}</h1>
         </div>
       </div>

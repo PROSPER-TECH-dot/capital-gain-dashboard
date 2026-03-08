@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Camera, Info, HeadphonesIcon, Lock, Smartphone, Eye, Gift, LogOut, ChevronRight } from 'lucide-react';
+import { Camera, Info, HeadphonesIcon, Lock, Smartphone, Eye, Gift, LogOut, ChevronRight, History } from 'lucide-react';
 import { useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 const menuItems = [
+  { icon: History, label: 'All History Records', path: '/history' },
   { icon: Info, label: 'About Us', path: '/about' },
   { icon: HeadphonesIcon, label: 'Customer Support', path: '/support' },
   { icon: Lock, label: 'Change Password', path: '/change-password' },

@@ -15,7 +15,7 @@ const menuItems = [
 ];
 
 const MinePage = () => {
-  const { user, profile, updateProfile, logout } = useAuth();
+  const { user, profile, updateProfile, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
@@ -6,46 +6,50 @@ import { ArrowLeft, Settings } from 'lucide-react';
 import Notification from '@/components/Notification';
 
 const AdminSettings = () => {
-  const { user } = useAuth();
+  const { isAdmin } = useAuth();
   const { settings, updateSettings } = useApp();
   const navigate = useNavigate();
   const [notification, setNotification] = useState<string | null>(null);
   const [form, setForm] = useState(settings);
 
-  if (!user?.isAdmin) { navigate('/'); return null; }
+  useEffect(() => { setForm(settings); }, [settings]);
 
-  const handleSave = () => {
-    updateSettings(form);
+  if (!isAdmin) { navigate('/'); return null; }
+
+  const handleSave = async () => {
+    await updateSettings(form);
     setNotification('Settings saved!');
   };
 
+  const supportNumbers = Array.isArray(form.support_numbers) ? form.support_numbers : [];
+
   const fields = [
-    { label: 'Website Name', key: 'websiteName', type: 'text' },
-    { label: 'WhatsApp Group Link', key: 'whatsappGroup', type: 'text' },
+    { label: 'Website Name', key: 'website_name', type: 'text' },
+    { label: 'WhatsApp Group Link', key: 'whatsapp_group', type: 'text' },
     { label: 'Support 1 Number', key: 'support1', type: 'text' },
     { label: 'Support 2 Number', key: 'support2', type: 'text' },
-    { label: 'Minimum Withdrawal (UGX)', key: 'minWithdrawal', type: 'number' },
-    { label: 'Minimum Deposit (UGX)', key: 'minDeposit', type: 'number' },
-    { label: 'Daily Earnings (%)', key: 'dailyEarnings', type: 'number' },
-    { label: 'Minimum Investment (UGX)', key: 'minInvestment', type: 'number' },
-    { label: 'Investment Period (days)', key: 'investmentPeriod', type: 'number' },
-    { label: 'Check-in Amount (UGX)', key: 'checkInAmount', type: 'number' },
-    { label: 'Message Popup Style', key: 'messagePopupStyle', type: 'text' },
+    { label: 'Minimum Withdrawal (UGX)', key: 'min_withdrawal', type: 'number' },
+    { label: 'Minimum Deposit (UGX)', key: 'min_deposit', type: 'number' },
+    { label: 'Daily Earnings (%)', key: 'daily_earnings', type: 'number' },
+    { label: 'Minimum Investment (UGX)', key: 'min_investment', type: 'number' },
+    { label: 'Investment Period (days)', key: 'investment_period', type: 'number' },
+    { label: 'Check-in Amount (UGX)', key: 'check_in_amount', type: 'number' },
+    { label: 'Message Popup Style', key: 'message_popup_style', type: 'text' },
   ];
 
   const getValue = (key: string) => {
-    if (key === 'support1') return form.supportNumbers[0]?.number || '';
-    if (key === 'support2') return form.supportNumbers[1]?.number || '';
+    if (key === 'support1') return supportNumbers[0]?.number || '';
+    if (key === 'support2') return supportNumbers[1]?.number || '';
     return (form as any)[key];
   };
 
   const setValue = (key: string, value: string) => {
     if (key === 'support1') {
-      setForm(f => ({ ...f, supportNumbers: [{ name: 'Support 1', number: value }, f.supportNumbers[1]] }));
+      setForm(f => ({ ...f, support_numbers: [{ name: 'Support 1', number: value }, supportNumbers[1] || { name: 'Support 2', number: '' }] }));
     } else if (key === 'support2') {
-      setForm(f => ({ ...f, supportNumbers: [f.supportNumbers[0], { name: 'Support 2', number: value }] }));
+      setForm(f => ({ ...f, support_numbers: [supportNumbers[0] || { name: 'Support 1', number: '' }, { name: 'Support 2', number: value }] }));
     } else {
-      const numFields = ['minWithdrawal', 'minDeposit', 'dailyEarnings', 'minInvestment', 'investmentPeriod', 'checkInAmount'];
+      const numFields = ['min_withdrawal', 'min_deposit', 'daily_earnings', 'min_investment', 'investment_period', 'check_in_amount'];
       setForm(f => ({ ...f, [key]: numFields.includes(key) ? parseInt(value) || 0 : value }));
     }
   };

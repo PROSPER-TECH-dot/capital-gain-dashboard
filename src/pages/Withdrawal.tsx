@@ -6,26 +6,25 @@ import { ArrowLeft, ArrowUpCircle } from 'lucide-react';
 import Notification from '@/components/Notification';
 
 const WithdrawalPage = () => {
-  const { user, updateUser } = useAuth();
+  const { user, profile, updateProfile, refreshProfile } = useAuth();
   const { settings, addTransaction } = useApp();
   const navigate = useNavigate();
   const [amount, setAmount] = useState('');
   const [notification, setNotification] = useState<string | null>(null);
 
-  if (!user) { navigate('/'); return null; }
+  if (!user || !profile) return null;
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const amt = parseInt(amount);
-    if (!amt || amt < settings.minWithdrawal) {
-      setNotification(`Minimum withdrawal is ${settings.minWithdrawal.toLocaleString()} UGX`);
-      return;
+    if (!amt || amt < settings.min_withdrawal) {
+      setNotification(`Minimum withdrawal is ${settings.min_withdrawal.toLocaleString()} UGX`); return;
     }
-    if (amt > user.accountBalance) {
-      setNotification('Insufficient balance');
-      return;
+    if (amt > profile.account_balance) {
+      setNotification('Insufficient balance'); return;
     }
-    updateUser(user.id, { accountBalance: user.accountBalance - amt });
-    addTransaction({ userId: user.id, type: 'withdrawal', amount: amt, status: 'completed', description: 'Withdrawal' });
+    await updateProfile(user.id, { account_balance: profile.account_balance - amt });
+    await addTransaction({ user_id: user.id, type: 'withdrawal', amount: amt, status: 'completed', description: 'Withdrawal' });
+    await refreshProfile();
     setAmount('');
     setNotification(`Withdrew ${amt.toLocaleString()} UGX successfully!`);
   };
@@ -43,10 +42,10 @@ const WithdrawalPage = () => {
             <ArrowUpCircle size={20} className="text-accent" />
             <h2 className="text-sm font-semibold text-foreground">Withdraw Funds</h2>
           </div>
-          <p className="text-xs text-muted-foreground mb-4">Available: {user.accountBalance.toLocaleString()} UGX • 24/7 withdrawals</p>
+          <p className="text-xs text-muted-foreground mb-4">Available: {profile.account_balance.toLocaleString()} UGX • 24/7 withdrawals</p>
           <input type="number" value={amount} onChange={e => setAmount(e.target.value)}
             className="w-full px-4 py-3 rounded-xl glass text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mb-4"
-            placeholder={`Min ${settings.minWithdrawal.toLocaleString()} UGX`} />
+            placeholder={`Min ${settings.min_withdrawal.toLocaleString()} UGX`} />
           <button onClick={handleWithdraw} className="w-full btn-accent py-3 text-sm">Withdraw Now</button>
         </div>
       </div>

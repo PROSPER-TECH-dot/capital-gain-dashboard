@@ -1,46 +1,49 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthContext';
 
 export interface Transaction {
   id: string;
-  userId: string;
-  type: 'recharge' | 'withdrawal' | 'investment' | 'earning' | 'checkin' | 'referral' | 'gift';
+  user_id: string;
+  type: string;
   amount: number;
-  status: 'pending' | 'completed' | 'failed';
-  createdAt: string;
+  status: string;
   description: string;
+  created_at: string;
 }
 
 export interface Investment {
   id: string;
-  userId: string;
+  user_id: string;
   amount: number;
-  dailyReturn: number;
-  startDate: string;
-  endDate: string;
-  totalEarned: number;
+  daily_return: number;
+  start_date: string;
+  end_date: string;
+  total_earned: number;
   active: boolean;
 }
 
 export interface GiftCode {
   id: string;
   code: string;
-  minAmount: number;
-  maxAmount: number;
-  usedBy: string[];
+  min_amount: number;
+  max_amount: number;
   active: boolean;
+  created_at: string;
 }
 
-interface AppSettings {
-  websiteName: string;
-  whatsappGroup: string;
-  supportNumbers: { name: string; number: string }[];
-  minWithdrawal: number;
-  minDeposit: number;
-  dailyEarnings: number;
-  minInvestment: number;
-  checkInAmount: number;
-  investmentPeriod: number;
-  messagePopupStyle: string;
+export interface AppSettings {
+  id: string;
+  website_name: string;
+  whatsapp_group: string;
+  support_numbers: { name: string; number: string }[];
+  min_withdrawal: number;
+  min_deposit: number;
+  daily_earnings: number;
+  min_investment: number;
+  check_in_amount: number;
+  investment_period: number;
+  message_popup_style: string;
 }
 
 interface AppContextType {
@@ -48,29 +51,33 @@ interface AppContextType {
   investments: Investment[];
   giftCodes: GiftCode[];
   settings: AppSettings;
-  addTransaction: (t: Omit<Transaction, 'id' | 'createdAt'>) => void;
-  addInvestment: (i: Omit<Investment, 'id' | 'totalEarned' | 'active'>) => void;
-  addGiftCode: (g: Omit<GiftCode, 'id' | 'usedBy' | 'active'>) => GiftCode;
-  redeemGiftCode: (code: string, userId: string) => number | null;
-  updateSettings: (s: Partial<AppSettings>) => void;
+  addTransaction: (t: Omit<Transaction, 'id' | 'created_at'>) => Promise<void>;
+  addInvestment: (i: { user_id: string; amount: number; daily_return: number; start_date: string; end_date: string }) => Promise<void>;
+  addGiftCode: (g: { code: string; min_amount: number; max_amount: number }) => Promise<void>;
+  redeemGiftCode: (code: string, userId: string) => Promise<number | null>;
+  updateSettings: (s: Partial<AppSettings>) => Promise<void>;
   checkedInToday: (userId: string) => boolean;
-  checkIn: (userId: string) => void;
+  checkIn: (userId: string) => Promise<void>;
+  refreshTransactions: () => Promise<void>;
+  refreshInvestments: () => Promise<void>;
+  refreshGiftCodes: () => Promise<void>;
 }
 
 const defaultSettings: AppSettings = {
-  websiteName: 'CAPITAL GAIN INVESTMENT',
-  whatsappGroup: 'https://chat.whatsapp.com/JyFXB1oYULyGLYo1KbaDg1?mode=gi_t',
-  supportNumbers: [
+  id: '',
+  website_name: 'CAPITAL GAIN INVESTMENT',
+  whatsapp_group: 'https://chat.whatsapp.com/JyFXB1oYULyGLYo1KbaDg1?mode=gi_t',
+  support_numbers: [
     { name: 'Support 1', number: '0730576396' },
     { name: 'Support 2', number: '0727846660' },
   ],
-  minWithdrawal: 5000,
-  minDeposit: 10000,
-  dailyEarnings: 12,
-  minInvestment: 10000,
-  checkInAmount: 350,
-  investmentPeriod: 60,
-  messagePopupStyle: 'slide',
+  min_withdrawal: 5000,
+  min_deposit: 10000,
+  daily_earnings: 12,
+  min_investment: 10000,
+  check_in_amount: 350,
+  investment_period: 60,
+  message_popup_style: 'slide',
 };
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -82,78 +89,126 @@ export const useApp = () => {
 };
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const { user, isAdmin } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [giftCodes, setGiftCodes] = useState<GiftCode[]>([]);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
-  const [checkIns, setCheckIns] = useState<Record<string, string>>({});
+  const [todayCheckIns, setTodayCheckIns] = useState<Set<string>>(new Set());
+
+  const refreshTransactions = async () => {
+    if (!user) return;
+    const { data } = isAdmin
+      ? await supabase.from('transactions').select('*').order('created_at', { ascending: false })
+      : await supabase.from('transactions').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    if (data) setTransactions(data as Transaction[]);
+  };
+
+  const refreshInvestments = async () => {
+    if (!user) return;
+    const { data } = isAdmin
+      ? await supabase.from('investments').select('*').order('created_at', { ascending: false })
+      : await supabase.from('investments').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    if (data) setInvestments(data as Investment[]);
+  };
+
+  const refreshGiftCodes = async () => {
+    const { data } = await supabase.from('gift_codes').select('*').order('created_at', { ascending: false });
+    if (data) setGiftCodes(data as GiftCode[]);
+  };
+
+  const fetchSettings = async () => {
+    const { data } = await supabase.from('settings').select('*').limit(1).single();
+    if (data) setSettings(data as unknown as AppSettings);
+  };
+
+  const fetchTodayCheckIns = async () => {
+    if (!user) return;
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await supabase
+      .from('check_ins')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .eq('check_in_date', today);
+    if (data) setTodayCheckIns(new Set(data.map(d => d.user_id)));
+  };
 
   useEffect(() => {
-    const s = localStorage.getItem('cgi_transactions');
-    if (s) setTransactions(JSON.parse(s));
-    const i = localStorage.getItem('cgi_investments');
-    if (i) setInvestments(JSON.parse(i));
-    const g = localStorage.getItem('cgi_giftcodes');
-    if (g) setGiftCodes(JSON.parse(g));
-    const st = localStorage.getItem('cgi_settings');
-    if (st) setSettings(JSON.parse(st));
-    const ci = localStorage.getItem('cgi_checkins');
-    if (ci) setCheckIns(JSON.parse(ci));
-  }, []);
+    if (user) {
+      refreshTransactions();
+      refreshInvestments();
+      refreshGiftCodes();
+      fetchSettings();
+      fetchTodayCheckIns();
+    }
+  }, [user, isAdmin]);
 
-  useEffect(() => { localStorage.setItem('cgi_transactions', JSON.stringify(transactions)); }, [transactions]);
-  useEffect(() => { localStorage.setItem('cgi_investments', JSON.stringify(investments)); }, [investments]);
-  useEffect(() => { localStorage.setItem('cgi_giftcodes', JSON.stringify(giftCodes)); }, [giftCodes]);
-  useEffect(() => { localStorage.setItem('cgi_settings', JSON.stringify(settings)); }, [settings]);
-  useEffect(() => { localStorage.setItem('cgi_checkins', JSON.stringify(checkIns)); }, [checkIns]);
-
-  const addTransaction = (t: Omit<Transaction, 'id' | 'createdAt'>) => {
-    setTransactions(prev => [{
-      ...t,
-      id: 'tx-' + Date.now(),
-      createdAt: new Date().toISOString(),
-    }, ...prev]);
+  const addTransaction = async (t: Omit<Transaction, 'id' | 'created_at'>) => {
+    await supabase.from('transactions').insert(t);
+    await refreshTransactions();
   };
 
-  const addInvestment = (i: Omit<Investment, 'id' | 'totalEarned' | 'active'>) => {
-    setInvestments(prev => [...prev, {
-      ...i,
-      id: 'inv-' + Date.now(),
-      totalEarned: 0,
-      active: true,
-    }]);
+  const addInvestment = async (i: { user_id: string; amount: number; daily_return: number; start_date: string; end_date: string }) => {
+    await supabase.from('investments').insert({ ...i, total_earned: 0, active: true });
+    await refreshInvestments();
   };
 
-  const addGiftCode = (g: Omit<GiftCode, 'id' | 'usedBy' | 'active'>) => {
-    const gc: GiftCode = { ...g, id: 'gc-' + Date.now(), usedBy: [], active: true };
-    setGiftCodes(prev => [...prev, gc]);
-    return gc;
+  const addGiftCode = async (g: { code: string; min_amount: number; max_amount: number }) => {
+    await supabase.from('gift_codes').insert(g);
+    await refreshGiftCodes();
   };
 
-  const redeemGiftCode = (code: string, userId: string): number | null => {
-    const gc = giftCodes.find(g => g.code === code && g.active && !g.usedBy.includes(userId));
+  const redeemGiftCode = async (code: string, userId: string): Promise<number | null> => {
+    // Find the gift code
+    const { data: gc } = await supabase
+      .from('gift_codes')
+      .select('*')
+      .eq('code', code)
+      .eq('active', true)
+      .single();
     if (!gc) return null;
-    const amount = Math.floor(Math.random() * (gc.maxAmount - gc.minAmount + 1)) + gc.minAmount;
-    setGiftCodes(prev => prev.map(g => g.id === gc.id ? { ...g, usedBy: [...g.usedBy, userId] } : g));
+
+    // Check if already redeemed
+    const { data: existing } = await supabase
+      .from('gift_code_redemptions')
+      .select('id')
+      .eq('gift_code_id', gc.id)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (existing) return null;
+
+    const amount = Math.floor(Math.random() * (Number(gc.max_amount) - Number(gc.min_amount) + 1)) + Number(gc.min_amount);
+
+    await supabase.from('gift_code_redemptions').insert({
+      gift_code_id: gc.id,
+      user_id: userId,
+      amount,
+    });
+
     return amount;
   };
 
-  const updateSettings = (s: Partial<AppSettings>) => {
-    setSettings(prev => ({ ...prev, ...s }));
+  const updateSettings = async (s: Partial<AppSettings>) => {
+    if (!settings.id) return;
+    await supabase.from('settings').update(s).eq('id', settings.id);
+    await fetchSettings();
   };
 
-  const checkedInToday = (userId: string) => {
-    const today = new Date().toDateString();
-    return checkIns[userId] === today;
-  };
+  const checkedInToday = (userId: string) => todayCheckIns.has(userId);
 
-  const checkIn = (userId: string) => {
-    const today = new Date().toDateString();
-    setCheckIns(prev => ({ ...prev, [userId]: today }));
+  const checkIn = async (userId: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    await supabase.from('check_ins').insert({ user_id: userId, check_in_date: today });
+    setTodayCheckIns(prev => new Set([...prev, userId]));
   };
 
   return (
-    <AppContext.Provider value={{ transactions, investments, giftCodes, settings, addTransaction, addInvestment, addGiftCode, redeemGiftCode, updateSettings, checkedInToday, checkIn }}>
+    <AppContext.Provider value={{
+      transactions, investments, giftCodes, settings,
+      addTransaction, addInvestment, addGiftCode, redeemGiftCode,
+      updateSettings, checkedInToday, checkIn,
+      refreshTransactions, refreshInvestments, refreshGiftCodes,
+    }}>
       {children}
     </AppContext.Provider>
   );

@@ -4,11 +4,13 @@ import { useApp } from '@/context/AppContext';
 import { ArrowLeft } from 'lucide-react';
 
 const AdminTransactions = () => {
-  const { user } = useAuth();
+  const { isAdmin } = useAuth();
   const { transactions } = useApp();
   const navigate = useNavigate();
 
-  if (!user?.isAdmin) { navigate('/'); return null; }
+  if (!isAdmin) { navigate('/'); return null; }
+
+  const formatAmount = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2 });
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -26,12 +28,12 @@ const AdminTransactions = () => {
             <div key={tx.id} className="glass-card rounded-xl p-3 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-foreground capitalize">{tx.type}</p>
-                <p className="text-[10px] text-muted-foreground">{tx.userId.slice(0, 12)}... • {new Date(tx.createdAt).toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">{tx.user_id.slice(0, 12)}... • {new Date(tx.created_at).toLocaleString()}</p>
                 <p className="text-[10px] text-muted-foreground">{tx.description}</p>
               </div>
               <div className="text-right">
                 <p className={`text-xs font-bold ${['recharge', 'earning', 'checkin', 'gift'].includes(tx.type) ? 'text-primary' : 'text-accent'}`}>
-                  {['recharge', 'earning', 'checkin', 'gift'].includes(tx.type) ? '+' : '-'}{tx.amount.toLocaleString()}
+                  {['recharge', 'earning', 'checkin', 'gift'].includes(tx.type) ? '+' : '-'}{Number(tx.amount).toLocaleString()}
                 </p>
                 <p className={`text-[10px] ${tx.status === 'completed' ? 'text-primary' : 'text-accent'}`}>{tx.status}</p>
               </div>

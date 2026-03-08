@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Camera, Info, HeadphonesIcon, Lock, Smartphone, Eye, Gift, LogOut, ChevronRight, History } from 'lucide-react';
+import { Camera, Info, HeadphonesIcon, Lock, Smartphone, Eye, Gift, LogOut, ChevronRight, History, Shield } from 'lucide-react';
 import { useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -15,7 +15,7 @@ const menuItems = [
 ];
 
 const MinePage = () => {
-  const { user, profile, updateProfile, logout } = useAuth();
+  const { user, profile, updateProfile, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,6 +62,17 @@ const MinePage = () => {
             <p className="text-xs text-muted-foreground">Code: {profile.referral_code}</p>
           </div>
         </div>
+
+        {isAdmin && (
+          <button onClick={() => navigate('/admin')}
+            className="w-full glass-card rounded-2xl flex items-center justify-between px-5 py-4 transition-colors hover:bg-primary/5">
+            <div className="flex items-center gap-3">
+              <Shield size={18} className="text-primary" />
+              <span className="text-sm font-semibold text-foreground">Admin Dashboard</span>
+            </div>
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </button>
+        )}
 
         <div className="glass-card rounded-2xl overflow-hidden">
           {menuItems.map(({ icon: Icon, label, path }, i) => (

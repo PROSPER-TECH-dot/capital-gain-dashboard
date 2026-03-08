@@ -3,22 +3,49 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { ArrowLeft, Lock } from 'lucide-react';
 import Notification from '@/components/Notification';
+import { supabase } from '@/integrations/supabase/client';
 
 const ChangePassword = () => {
-  const { updatePassword } = useAuth();
+  const { user, updatePassword } = useAuth();
   const navigate = useNavigate();
+  const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
   const [notification, setNotification] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPass || !confirmPass) { setNotification('Fill all fields'); return; }
+    if (!oldPass || !newPass || !confirmPass) { setNotification('Fill all fields'); return; }
     if (newPass !== confirmPass) { setNotification('Passwords do not match'); return; }
     if (newPass.length < 6) { setNotification('Password must be at least 6 characters'); return; }
+
+    setLoading(true);
+
+    // Verify old password by re-authenticating
+    const email = user?.email;
+    if (!email) { setNotification('Unable to verify account'); setLoading(false); return; }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: oldPass,
+    });
+
+    if (signInError) {
+      setNotification('Current password is incorrect');
+      setLoading(false);
+      return;
+    }
+
     const result = await updatePassword(newPass);
+    setLoading(false);
     if (result.error) setNotification(result.error);
-    else { setNotification('Password changed successfully!'); setNewPass(''); setConfirmPass(''); }
+    else {
+      setNotification('Password changed successfully!');
+      setOldPass('');
+      setNewPass('');
+      setConfirmPass('');
+    }
   };
 
   return (
@@ -35,8 +62,9 @@ const ChangePassword = () => {
             <h2 className="text-sm font-semibold text-foreground">Update Password</h2>
           </div>
           {[
+            { label: 'Current Password', value: oldPass, set: setOldPass },
             { label: 'New Password', value: newPass, set: setNewPass },
-            { label: 'Confirm Password', value: confirmPass, set: setConfirmPass },
+            { label: 'Confirm New Password', value: confirmPass, set: setConfirmPass },
           ].map(({ label, value, set }) => (
             <div key={label}>
               <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
@@ -45,7 +73,10 @@ const ChangePassword = () => {
                 placeholder={label} />
             </div>
           ))}
-          <button type="submit" className="w-full btn-accent py-3 text-sm">Change Password</button>
+          <button type="submit" disabled={loading}
+            className="w-full btn-accent py-3 text-sm disabled:opacity-50">
+            {loading ? 'Changing...' : 'Change Password'}
+          </button>
         </form>
       </div>
     </div>

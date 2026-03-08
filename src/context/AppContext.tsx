@@ -28,6 +28,7 @@ export interface GiftCode {
   code: string;
   min_amount: number;
   max_amount: number;
+  max_redemptions: number;
   active: boolean;
   created_at: string;
 }
@@ -53,7 +54,8 @@ interface AppContextType {
   settings: AppSettings;
   addTransaction: (t: Omit<Transaction, 'id' | 'created_at'>) => Promise<void>;
   addInvestment: (i: { user_id: string; amount: number; daily_return: number; start_date: string; end_date: string }) => Promise<void>;
-  addGiftCode: (g: { code: string; min_amount: number; max_amount: number }) => Promise<void>;
+  addGiftCode: (g: { code: string; min_amount: number; max_amount: number; max_redemptions: number }) => Promise<void>;
+  toggleGiftCode: (id: string, active: boolean) => Promise<void>;
   redeemGiftCode: (code: string, userId: string) => Promise<number | null>;
   updateSettings: (s: Partial<AppSettings>) => Promise<void>;
   checkedInToday: (userId: string) => boolean;
@@ -153,8 +155,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await refreshInvestments();
   };
 
-  const addGiftCode = async (g: { code: string; min_amount: number; max_amount: number }) => {
-    await supabase.from('gift_codes').insert(g);
+  const addGiftCode = async (g: { code: string; min_amount: number; max_amount: number; max_redemptions: number }) => {
+    await supabase.from('gift_codes').insert(g as any);
+    await refreshGiftCodes();
+  };
+
+  const toggleGiftCode = async (id: string, active: boolean) => {
+    await supabase.from('gift_codes').update({ active } as any).eq('id', id);
     await refreshGiftCodes();
   };
 
@@ -205,7 +212,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppContext.Provider value={{
       transactions, investments, giftCodes, settings,
-      addTransaction, addInvestment, addGiftCode, redeemGiftCode,
+      addTransaction, addInvestment, addGiftCode, toggleGiftCode, redeemGiftCode,
       updateSettings, checkedInToday, checkIn,
       refreshTransactions, refreshInvestments, refreshGiftCodes,
     }}>

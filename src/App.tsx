@@ -23,6 +23,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminTransactions from "./pages/admin/Transactions";
 import AdminGiftCodes from "./pages/admin/GiftCodes";
 import AdminSettings from "./pages/admin/Settings";
+import AdminUsers from "./pages/admin/Users";
 import TransactionHistory from "./pages/TransactionHistory";
 import NotFound from "./pages/NotFound";
 
@@ -59,6 +60,7 @@ const AppRoutes = () => {
         <Route path="/admin" element={user ? <AdminDashboard /> : <Navigate to="/" />} />
         <Route path="/admin/transactions" element={user ? <AdminTransactions /> : <Navigate to="/" />} />
         <Route path="/admin/gift-codes" element={user ? <AdminGiftCodes /> : <Navigate to="/" />} />
+        <Route path="/admin/users" element={user ? <AdminUsers /> : <Navigate to="/" />} />
         <Route path="/admin/settings" element={user ? <AdminSettings /> : <Navigate to="/" />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

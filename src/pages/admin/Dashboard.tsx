@@ -43,6 +43,7 @@ const AdminDashboard = () => {
 
   const menuPages = [
     { label: 'Overview', icon: BarChart3, path: '/admin' },
+    { label: 'Users', icon: Users, path: '/admin/users' },
     { label: 'Transactions', icon: ArrowUpDown, path: '/admin/transactions' },
     { label: 'Gift Codes', icon: Gift, path: '/admin/gift-codes' },
     { label: 'Settings', icon: Settings, path: '/admin/settings' },

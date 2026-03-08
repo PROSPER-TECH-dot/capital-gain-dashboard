@@ -74,6 +74,7 @@ export type Database = {
           created_at: string
           id: string
           max_amount: number
+          max_redemptions: number
           min_amount: number
         }
         Insert: {
@@ -82,6 +83,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_amount?: number
+          max_redemptions?: number
           min_amount?: number
         }
         Update: {
@@ -90,6 +92,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_amount?: number
+          max_redemptions?: number
           min_amount?: number
         }
         Relationships: []

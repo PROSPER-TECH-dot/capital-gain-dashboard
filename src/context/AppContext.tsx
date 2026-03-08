@@ -155,8 +155,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await refreshInvestments();
   };
 
-  const addGiftCode = async (g: { code: string; min_amount: number; max_amount: number }) => {
-    await supabase.from('gift_codes').insert(g);
+  const addGiftCode = async (g: { code: string; min_amount: number; max_amount: number; max_redemptions: number }) => {
+    await supabase.from('gift_codes').insert(g as any);
+    await refreshGiftCodes();
+  };
+
+  const toggleGiftCode = async (id: string, active: boolean) => {
+    await supabase.from('gift_codes').update({ active } as any).eq('id', id);
     await refreshGiftCodes();
   };
 

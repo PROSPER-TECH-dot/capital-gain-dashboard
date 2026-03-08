@@ -7,12 +7,15 @@ import Notification from '@/components/Notification';
 
 const WithdrawalPage = () => {
   const { user, profile, updateProfile, refreshProfile } = useAuth();
-  const { settings, addTransaction } = useApp();
+  const { settings, addTransaction, investments } = useApp();
   const navigate = useNavigate();
   const [amount, setAmount] = useState('');
   const [notification, setNotification] = useState<string | null>(null);
 
   if (!user || !profile) return null;
+
+  const userActiveInvestments = investments.filter(i => i.user_id === user.id && i.active);
+  const hasActiveInvestment = userActiveInvestments.length > 0;
 
   const handleWithdraw = async () => {
     const amt = parseInt(amount);

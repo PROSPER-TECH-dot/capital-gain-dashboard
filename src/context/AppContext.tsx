@@ -54,7 +54,8 @@ interface AppContextType {
   settings: AppSettings;
   addTransaction: (t: Omit<Transaction, 'id' | 'created_at'>) => Promise<void>;
   addInvestment: (i: { user_id: string; amount: number; daily_return: number; start_date: string; end_date: string }) => Promise<void>;
-  addGiftCode: (g: { code: string; min_amount: number; max_amount: number }) => Promise<void>;
+  addGiftCode: (g: { code: string; min_amount: number; max_amount: number; max_redemptions: number }) => Promise<void>;
+  toggleGiftCode: (id: string, active: boolean) => Promise<void>;
   redeemGiftCode: (code: string, userId: string) => Promise<number | null>;
   updateSettings: (s: Partial<AppSettings>) => Promise<void>;
   checkedInToday: (userId: string) => boolean;

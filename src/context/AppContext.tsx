@@ -212,7 +212,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppContext.Provider value={{
       transactions, investments, giftCodes, settings,
-      addTransaction, addInvestment, addGiftCode, redeemGiftCode,
+      addTransaction, addInvestment, addGiftCode, toggleGiftCode, redeemGiftCode,
       updateSettings, checkedInToday, checkIn,
       refreshTransactions, refreshInvestments, refreshGiftCodes,
     }}>

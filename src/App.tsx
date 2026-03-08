@@ -9,6 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import Auth from "./pages/Auth";
 import HomePage from "./pages/Home";
 import InvestPage from "./pages/Invest";
+import MyInvestmentsPage from "./pages/MyInvestments";
 import MyTeamPage from "./pages/MyTeam";
 import MinePage from "./pages/Mine";
 import RechargePage from "./pages/Recharge";

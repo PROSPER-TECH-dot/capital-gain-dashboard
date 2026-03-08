@@ -23,6 +23,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminTransactions from "./pages/admin/Transactions";
 import AdminGiftCodes from "./pages/admin/GiftCodes";
 import AdminSettings from "./pages/admin/Settings";
+import TransactionHistory from "./pages/TransactionHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

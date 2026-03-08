@@ -5,6 +5,7 @@ import { useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 const menuItems = [
+  { icon: History, label: 'All History Records', path: '/history' },
   { icon: Info, label: 'About Us', path: '/about' },
   { icon: HeadphonesIcon, label: 'Customer Support', path: '/support' },
   { icon: Lock, label: 'Change Password', path: '/change-password' },

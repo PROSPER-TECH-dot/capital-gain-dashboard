@@ -52,8 +52,10 @@ const HomePage = () => {
 
       <div className="relative w-full h-44 overflow-hidden rounded-b-3xl">
         {heroImages.map((img, i) => (
-          <img key={i} src={img} alt="Investment"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === currentImage ? 'opacity-100' : 'opacity-0'}`} />
+          <img key={`${i}-${currentImage}`} src={img} alt="Investment"
+            className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-in-out ${
+              i === currentImage ? 'translate-x-0' : i < currentImage || (currentImage === 0 && i === heroImages.length - 1) ? '-translate-x-full' : 'translate-x-full'
+            }`} />
         ))}
         <div className="absolute inset-0 gradient-hero opacity-60" />
         <div className="absolute inset-0 flex items-center justify-center">

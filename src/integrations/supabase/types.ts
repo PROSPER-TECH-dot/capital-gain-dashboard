@@ -14,16 +14,287 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      check_ins: {
+        Row: {
+          check_in_date: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          check_in_date?: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          check_in_date?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gift_code_redemptions: {
+        Row: {
+          amount: number
+          created_at: string
+          gift_code_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          gift_code_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          gift_code_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_code_redemptions_gift_code_id_fkey"
+            columns: ["gift_code_id"]
+            isOneToOne: false
+            referencedRelation: "gift_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          max_amount: number
+          min_amount: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          max_amount?: number
+          min_amount?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          max_amount?: number
+          min_amount?: number
+        }
+        Relationships: []
+      }
+      investments: {
+        Row: {
+          active: boolean
+          amount: number
+          created_at: string
+          daily_return: number
+          end_date: string
+          id: string
+          start_date: string
+          total_earned: number
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          created_at?: string
+          daily_return: number
+          end_date: string
+          id?: string
+          start_date?: string
+          total_earned?: number
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          created_at?: string
+          daily_return?: number
+          end_date?: string
+          id?: string
+          start_date?: string
+          total_earned?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          account_balance: number
+          created_at: string
+          cumulative_income: number
+          email: string
+          id: string
+          is_banned: boolean
+          phone: string
+          profile_photo: string | null
+          recharge_balance: number
+          referral_code: string
+          updated_at: string
+          upline_user_id: string | null
+          user_id: string
+          username: string
+        }
+        Insert: {
+          account_balance?: number
+          created_at?: string
+          cumulative_income?: number
+          email: string
+          id?: string
+          is_banned?: boolean
+          phone?: string
+          profile_photo?: string | null
+          recharge_balance?: number
+          referral_code: string
+          updated_at?: string
+          upline_user_id?: string | null
+          user_id: string
+          username: string
+        }
+        Update: {
+          account_balance?: number
+          created_at?: string
+          cumulative_income?: number
+          email?: string
+          id?: string
+          is_banned?: boolean
+          phone?: string
+          profile_photo?: string | null
+          recharge_balance?: number
+          referral_code?: string
+          updated_at?: string
+          upline_user_id?: string | null
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_upline"
+            columns: ["upline_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      settings: {
+        Row: {
+          check_in_amount: number
+          daily_earnings: number
+          id: string
+          investment_period: number
+          message_popup_style: string
+          min_deposit: number
+          min_investment: number
+          min_withdrawal: number
+          support_numbers: Json
+          website_name: string
+          whatsapp_group: string
+        }
+        Insert: {
+          check_in_amount?: number
+          daily_earnings?: number
+          id?: string
+          investment_period?: number
+          message_popup_style?: string
+          min_deposit?: number
+          min_investment?: number
+          min_withdrawal?: number
+          support_numbers?: Json
+          website_name?: string
+          whatsapp_group?: string
+        }
+        Update: {
+          check_in_amount?: number
+          daily_earnings?: number
+          id?: string
+          investment_period?: number
+          message_popup_style?: string
+          min_deposit?: number
+          min_investment?: number
+          min_withdrawal?: number
+          support_numbers?: Json
+          website_name?: string
+          whatsapp_group?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          status?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_referral_code: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +421,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

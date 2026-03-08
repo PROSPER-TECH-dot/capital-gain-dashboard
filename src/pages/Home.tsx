@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { Wallet, ArrowDownCircle, ArrowUpCircle, CalendarCheck, Clock, ChevronRight } from 'lucide-react';
+import { Wallet, ArrowDownCircle, ArrowUpCircle, CalendarCheck, Clock } from 'lucide-react';
 import LiveTicker from '@/components/LiveTicker';
 import Notification from '@/components/Notification';
 
@@ -13,63 +13,52 @@ const heroImages = [
 ];
 
 const HomePage = () => {
-  const { user, updateUser } = useAuth();
+  const { user, profile, updateProfile, refreshProfile } = useAuth();
   const { transactions, settings, checkedInToday, checkIn, addTransaction } = useApp();
   const navigate = useNavigate();
   const [currentImage, setCurrentImage] = useState(0);
   const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) { navigate('/'); return; }
     const interval = setInterval(() => {
       setCurrentImage(prev => (prev + 1) % heroImages.length);
     }, 2000);
     return () => clearInterval(interval);
-  }, [user, navigate]);
+  }, []);
 
-  if (!user) return null;
+  if (!user || !profile) return null;
 
-  const handleCheckIn = () => {
+  const handleCheckIn = async () => {
     if (checkedInToday(user.id)) {
       setNotification('You have already checked in today!');
       return;
     }
-    checkIn(user.id);
-    updateUser(user.id, { accountBalance: user.accountBalance + settings.checkInAmount });
-    addTransaction({ userId: user.id, type: 'checkin', amount: settings.checkInAmount, status: 'completed', description: 'Daily check-in bonus' });
-    setNotification(`Check-in successful! +${settings.checkInAmount} UGX`);
+    await checkIn(user.id);
+    await updateProfile(user.id, { account_balance: profile.account_balance + settings.check_in_amount });
+    await addTransaction({ user_id: user.id, type: 'checkin', amount: settings.check_in_amount, status: 'completed', description: 'Daily check-in bonus' });
+    await refreshProfile();
+    setNotification(`Check-in successful! +${settings.check_in_amount} UGX`);
   };
 
-  const userTransactions = transactions.filter(t => t.userId === user.id);
-
+  const userTransactions = transactions.filter(t => t.user_id === user.id);
   const formatAmount = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2 });
 
   return (
     <div className="min-h-screen pb-20 bg-background">
       {notification && <Notification message={notification} onClose={() => setNotification(null)} />}
 
-      {/* Header with sliding images */}
       <div className="relative w-full h-44 overflow-hidden rounded-b-3xl">
         {heroImages.map((img, i) => (
-          <img
-            key={i}
-            src={img}
-            alt="Investment"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
-              i === currentImage ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
+          <img key={i} src={img} alt="Investment"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === currentImage ? 'opacity-100' : 'opacity-0'}`} />
         ))}
         <div className="absolute inset-0 gradient-hero opacity-60" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="text-2xl font-bold font-heading text-primary-foreground drop-shadow-lg">
-            {settings.websiteName}
-          </h1>
+          <h1 className="text-2xl font-bold font-heading text-primary-foreground drop-shadow-lg">{settings.website_name}</h1>
         </div>
       </div>
 
       <div className="px-4 -mt-6 space-y-4">
-        {/* Balance Cards */}
         <div className="glass-card rounded-2xl p-5 space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -77,7 +66,7 @@ const HomePage = () => {
               <span className="text-xs font-medium text-muted-foreground">Account Balance</span>
             </div>
           </div>
-          <p className="text-3xl font-bold font-heading text-foreground">{formatAmount(user.accountBalance)} <span className="text-sm font-normal text-muted-foreground">UGX</span></p>
+          <p className="text-3xl font-bold font-heading text-foreground">{formatAmount(profile.account_balance)} <span className="text-sm font-normal text-muted-foreground">UGX</span></p>
           <div className="flex gap-3">
             <button onClick={() => navigate('/recharge')} className="flex-1 btn-accent py-2.5 text-xs flex items-center justify-center gap-1.5 rounded-xl">
               <ArrowDownCircle size={16} /> Recharge
@@ -91,18 +80,16 @@ const HomePage = () => {
         <div className="grid grid-cols-2 gap-3">
           <div className="glass-card rounded-xl p-4">
             <p className="text-[10px] text-muted-foreground font-medium">Recharge Balance</p>
-            <p className="text-lg font-bold font-heading text-foreground mt-1">{formatAmount(user.rechargeBalance)}</p>
+            <p className="text-lg font-bold font-heading text-foreground mt-1">{formatAmount(profile.recharge_balance)}</p>
           </div>
           <div className="glass-card rounded-xl p-4">
             <p className="text-[10px] text-muted-foreground font-medium">Cumulative Income</p>
-            <p className="text-lg font-bold font-heading text-primary mt-1">{formatAmount(user.cumulativeIncome)}</p>
+            <p className="text-lg font-bold font-heading text-primary mt-1">{formatAmount(profile.cumulative_income)}</p>
           </div>
         </div>
 
-        {/* Live Ticker */}
         <LiveTicker />
 
-        {/* Check-in */}
         <div className="glass-card rounded-2xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
@@ -110,23 +97,15 @@ const HomePage = () => {
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground">Daily Check-in</p>
-              <p className="text-xs text-muted-foreground">Earn {settings.checkInAmount} UGX daily</p>
+              <p className="text-xs text-muted-foreground">Earn {settings.check_in_amount} UGX daily</p>
             </div>
           </div>
-          <button
-            onClick={handleCheckIn}
-            disabled={checkedInToday(user.id)}
-            className={`px-5 py-2 rounded-xl text-xs font-semibold transition-all ${
-              checkedInToday(user.id)
-                ? 'bg-muted text-muted-foreground'
-                : 'btn-accent'
-            }`}
-          >
+          <button onClick={handleCheckIn} disabled={checkedInToday(user.id)}
+            className={`px-5 py-2 rounded-xl text-xs font-semibold transition-all ${checkedInToday(user.id) ? 'bg-muted text-muted-foreground' : 'btn-accent'}`}>
             {checkedInToday(user.id) ? 'Done ✓' : 'Check In'}
           </button>
         </div>
 
-        {/* Transaction History */}
         <div className="glass-card rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold font-heading text-foreground">Transaction History</h3>
@@ -149,13 +128,11 @@ const HomePage = () => {
                     </div>
                     <div>
                       <p className="text-xs font-medium text-foreground capitalize">{tx.type}</p>
-                      <p className="text-[10px] text-muted-foreground">{new Date(tx.createdAt).toLocaleDateString()}</p>
+                      <p className="text-[10px] text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`text-xs font-semibold ${
-                      ['recharge', 'earning', 'checkin', 'referral', 'gift'].includes(tx.type) ? 'text-primary' : 'text-accent'
-                    }`}>
+                    <p className={`text-xs font-semibold ${['recharge', 'earning', 'checkin', 'referral', 'gift'].includes(tx.type) ? 'text-primary' : 'text-accent'}`}>
                       {['recharge', 'earning', 'checkin', 'referral', 'gift'].includes(tx.type) ? '+' : '-'}{formatAmount(tx.amount)}
                     </p>
                     <p className={`text-[10px] ${tx.status === 'completed' ? 'text-primary' : tx.status === 'pending' ? 'text-accent' : 'text-destructive'}`}>

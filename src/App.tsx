@@ -28,28 +28,36 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center gradient-hero">
+        <div className="text-primary-foreground text-lg font-heading animate-pulse">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <>
       <Routes>
         <Route path="/" element={user ? <Navigate to="/home" /> : <Auth />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/invest" element={<InvestPage />} />
-        <Route path="/my-team" element={<MyTeamPage />} />
-        <Route path="/mine" element={<MinePage />} />
-        <Route path="/recharge" element={<RechargePage />} />
-        <Route path="/withdrawal" element={<WithdrawalPage />} />
-        <Route path="/support" element={<CustomerSupport />} />
-        <Route path="/change-password" element={<ChangePassword />} />
-        <Route path="/profile-view" element={<ProfileView />} />
-        <Route path="/gift-code" element={<GiftCodePage />} />
+        <Route path="/home" element={user ? <HomePage /> : <Navigate to="/" />} />
+        <Route path="/invest" element={user ? <InvestPage /> : <Navigate to="/" />} />
+        <Route path="/my-team" element={user ? <MyTeamPage /> : <Navigate to="/" />} />
+        <Route path="/mine" element={user ? <MinePage /> : <Navigate to="/" />} />
+        <Route path="/recharge" element={user ? <RechargePage /> : <Navigate to="/" />} />
+        <Route path="/withdrawal" element={user ? <WithdrawalPage /> : <Navigate to="/" />} />
+        <Route path="/support" element={user ? <CustomerSupport /> : <Navigate to="/" />} />
+        <Route path="/change-password" element={user ? <ChangePassword /> : <Navigate to="/" />} />
+        <Route path="/profile-view" element={user ? <ProfileView /> : <Navigate to="/" />} />
+        <Route path="/gift-code" element={user ? <GiftCodePage /> : <Navigate to="/" />} />
         <Route path="/app" element={<AppPage />} />
         <Route path="/about" element={<AboutUs />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/transactions" element={<AdminTransactions />} />
-        <Route path="/admin/gift-codes" element={<AdminGiftCodes />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/admin" element={user ? <AdminDashboard /> : <Navigate to="/" />} />
+        <Route path="/admin/transactions" element={user ? <AdminTransactions /> : <Navigate to="/" />} />
+        <Route path="/admin/gift-codes" element={user ? <AdminGiftCodes /> : <Navigate to="/" />} />
+        <Route path="/admin/settings" element={user ? <AdminSettings /> : <Navigate to="/" />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <BottomNav />

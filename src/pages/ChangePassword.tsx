@@ -7,19 +7,18 @@ import Notification from '@/components/Notification';
 const ChangePassword = () => {
   const { updatePassword } = useAuth();
   const navigate = useNavigate();
-  const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
   const [notification, setNotification] = useState<string | null>(null);
 
-  const handleChange = (e: React.FormEvent) => {
+  const handleChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!oldPass || !newPass || !confirmPass) { setNotification('Fill all fields'); return; }
+    if (!newPass || !confirmPass) { setNotification('Fill all fields'); return; }
     if (newPass !== confirmPass) { setNotification('Passwords do not match'); return; }
     if (newPass.length < 6) { setNotification('Password must be at least 6 characters'); return; }
-    const ok = updatePassword(oldPass, newPass);
-    if (ok) { setNotification('Password changed successfully!'); setOldPass(''); setNewPass(''); setConfirmPass(''); }
-    else setNotification('Old password is incorrect');
+    const result = await updatePassword(newPass);
+    if (result.error) setNotification(result.error);
+    else { setNotification('Password changed successfully!'); setNewPass(''); setConfirmPass(''); }
   };
 
   return (
@@ -36,7 +35,6 @@ const ChangePassword = () => {
             <h2 className="text-sm font-semibold text-foreground">Update Password</h2>
           </div>
           {[
-            { label: 'Old Password', value: oldPass, set: setOldPass },
             { label: 'New Password', value: newPass, set: setNewPass },
             { label: 'Confirm Password', value: confirmPass, set: setConfirmPass },
           ].map(({ label, value, set }) => (

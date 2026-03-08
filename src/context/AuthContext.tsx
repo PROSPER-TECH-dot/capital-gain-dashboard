@@ -1,30 +1,37 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
-interface User {
+export interface Profile {
   id: string;
+  user_id: string;
   username: string;
   email: string;
   phone: string;
-  referralCode: string;
-  upline?: { username: string; phone: string };
-  profilePhoto?: string;
-  accountBalance: number;
-  rechargeBalance: number;
-  cumulativeIncome: number;
-  isBanned: boolean;
-  isAdmin: boolean;
-  createdAt: string;
+  referral_code: string;
+  upline_user_id: string | null;
+  profile_photo: string | null;
+  account_balance: number;
+  recharge_balance: number;
+  cumulative_income: number;
+  is_banned: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextType {
-  user: User | null;
-  users: User[];
-  login: (usernameOrEmail: string, password: string) => boolean;
-  register: (data: RegisterData) => boolean;
-  logout: () => void;
-  updateUser: (id: string, updates: Partial<User>) => void;
-  updatePassword: (oldPass: string, newPass: string) => boolean;
-  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  user: SupabaseUser | null;
+  profile: Profile | null;
+  profiles: Profile[];
+  isAdmin: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ error?: string }>;
+  register: (data: RegisterData) => Promise<{ error?: string }>;
+  logout: () => Promise<void>;
+  updateProfile: (userId: string, updates: Partial<Profile>) => Promise<void>;
+  updatePassword: (newPass: string) => Promise<{ error?: string }>;
+  refreshProfile: () => Promise<void>;
+  refreshProfiles: () => Promise<void>;
 }
 
 interface RegisterData {
@@ -43,102 +50,154 @@ export const useAuth = () => {
   return ctx;
 };
 
-const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
-
-const ADMIN_USER: User = {
-  id: 'admin-001',
-  username: 'admin',
-  email: 'admin@capitalgain.com',
-  phone: '0000000000',
-  referralCode: 'ADMIN1',
-  accountBalance: 0,
-  rechargeBalance: 0,
-  cumulativeIncome: 0,
-  isBanned: false,
-  isAdmin: true,
-  createdAt: new Date().toISOString(),
-};
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([ADMIN_USER]);
-  const [passwords, setPasswords] = useState<Record<string, string>>({ 'admin-001': 'admin123' });
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    if (data) setProfile(data as Profile);
+    return data as Profile | null;
+  };
+
+  const fetchIsAdmin = async (userId: string) => {
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
+      .maybeSingle();
+    setIsAdmin(!!data);
+  };
+
+  const refreshProfiles = async () => {
+    const { data } = await supabase.from('profiles').select('*');
+    if (data) setProfiles(data as Profile[]);
+  };
+
+  const refreshProfile = async () => {
+    if (user) await fetchProfile(user.id);
+  };
 
   useEffect(() => {
-    const stored = localStorage.getItem('cgi_users');
-    const storedPw = localStorage.getItem('cgi_passwords');
-    const storedUser = localStorage.getItem('cgi_current_user');
-    if (stored) setUsers(JSON.parse(stored));
-    if (storedPw) setPasswords(JSON.parse(storedPw));
-    if (storedUser) setUser(JSON.parse(storedUser));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        await fetchProfile(u.id);
+        await fetchIsAdmin(u.id);
+        await refreshProfiles();
+      } else {
+        setProfile(null);
+        setIsAdmin(false);
+        setProfiles([]);
+      }
+      setLoading(false);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        fetchProfile(u.id);
+        fetchIsAdmin(u.id);
+        refreshProfiles();
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('cgi_users', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem('cgi_passwords', JSON.stringify(passwords));
-  }, [passwords]);
-
-  useEffect(() => {
-    if (user) localStorage.setItem('cgi_current_user', JSON.stringify(user));
-    else localStorage.removeItem('cgi_current_user');
-  }, [user]);
-
-  const login = (usernameOrEmail: string, password: string) => {
-    const found = users.find(u => (u.username === usernameOrEmail || u.email === usernameOrEmail));
-    if (!found) return false;
-    if (found.isBanned) return false;
-    if (passwords[found.id] !== password) return false;
-    setUser(found);
-    return true;
-  };
-
-  const register = (data: RegisterData) => {
-    if (users.find(u => u.username === data.username || u.email === data.email)) return false;
-    const id = 'user-' + Date.now();
-    let upline: User['upline'] = undefined;
-    if (data.referralCode) {
-      const referrer = users.find(u => u.referralCode === data.referralCode);
-      if (referrer) upline = { username: referrer.username, phone: referrer.phone };
+  const login = async (emailOrUsername: string, password: string) => {
+    // Try to find by username first
+    let email = emailOrUsername;
+    if (!emailOrUsername.includes('@')) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('username', emailOrUsername)
+        .single();
+      if (data) email = data.email;
+      else return { error: 'User not found' };
     }
-    const newUser: User = {
-      id,
-      username: data.username,
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+
+    // Check if banned
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('is_banned')
+      .eq('email', email)
+      .single();
+    if (prof?.is_banned) {
+      await supabase.auth.signOut();
+      return { error: 'Account is banned' };
+    }
+    return {};
+  };
+
+  const register = async (data: RegisterData) => {
+    // Check username uniqueness
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', data.username)
+      .maybeSingle();
+    if (existing) return { error: 'Username already exists' };
+
+    const { error } = await supabase.auth.signUp({
       email: data.email,
-      phone: data.phone,
-      referralCode: generateCode(),
-      upline,
-      accountBalance: 0,
-      rechargeBalance: 0,
-      cumulativeIncome: 0,
-      isBanned: false,
-      isAdmin: false,
-      createdAt: new Date().toISOString(),
-    };
-    setUsers(prev => [...prev, newUser]);
-    setPasswords(prev => ({ ...prev, [id]: data.password }));
-    setUser(newUser);
-    return true;
+      password: data.password,
+      options: {
+        data: {
+          username: data.username,
+          phone: data.phone,
+          referral_code: data.referralCode || '',
+        },
+      },
+    });
+    if (error) return { error: error.message };
+    return {};
   };
 
-  const logout = () => setUser(null);
-
-  const updateUser = (id: string, updates: Partial<User>) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
-    if (user?.id === id) setUser(prev => prev ? { ...prev, ...updates } : prev);
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setProfile(null);
+    setIsAdmin(false);
   };
 
-  const updatePassword = (oldPass: string, newPass: string) => {
-    if (!user) return false;
-    if (passwords[user.id] !== oldPass) return false;
-    setPasswords(prev => ({ ...prev, [user.id]: newPass }));
-    return true;
+  const updateProfile = async (userId: string, updates: Partial<Profile>) => {
+    await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('user_id', userId);
+    // Refresh
+    if (userId === user?.id) await fetchProfile(userId);
+    await refreshProfiles();
+  };
+
+  const updatePassword = async (newPass: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPass });
+    if (error) return { error: error.message };
+    return {};
   };
 
   return (
-    <AuthContext.Provider value={{ user, users, login, register, logout, updateUser, updatePassword, setUsers }}>
+    <AuthContext.Provider value={{
+      user, profile, profiles, isAdmin, loading,
+      login, register, logout, updateProfile, updatePassword,
+      refreshProfile, refreshProfiles,
+    }}>
       {children}
     </AuthContext.Provider>
   );

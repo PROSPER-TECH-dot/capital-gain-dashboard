@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { ArrowLeft, Gift, Plus } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import Notification from '@/components/Notification';
 
 const AdminGiftCodes = () => {
-  const { user } = useAuth();
+  const { isAdmin } = useAuth();
   const { giftCodes, addGiftCode } = useApp();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
@@ -14,13 +14,13 @@ const AdminGiftCodes = () => {
   const [maxAmt, setMaxAmt] = useState('1500');
   const [notification, setNotification] = useState<string | null>(null);
 
-  if (!user?.isAdmin) { navigate('/'); return null; }
+  if (!isAdmin) { navigate('/'); return null; }
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!code.trim()) { setNotification('Enter a code'); return; }
     const min = parseInt(minAmt) || 100;
     const max = parseInt(maxAmt) || 1500;
-    addGiftCode({ code: code.trim().toUpperCase(), minAmount: min, maxAmount: max });
+    await addGiftCode({ code: code.trim().toUpperCase(), min_amount: min, max_amount: max });
     setCode('');
     setNotification('Gift code created!');
   };
@@ -61,7 +61,7 @@ const AdminGiftCodes = () => {
             <div key={gc.id} className="glass-card rounded-xl p-3 flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-foreground tracking-widest">{gc.code}</p>
-                <p className="text-[10px] text-muted-foreground">{gc.minAmount}-{gc.maxAmount} UGX • {gc.usedBy.length} used</p>
+                <p className="text-[10px] text-muted-foreground">{Number(gc.min_amount)}-{Number(gc.max_amount)} UGX</p>
               </div>
               <span className={`text-[10px] px-2 py-0.5 rounded-full ${gc.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                 {gc.active ? 'Active' : 'Inactive'}

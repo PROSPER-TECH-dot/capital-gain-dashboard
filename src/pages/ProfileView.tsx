@@ -3,10 +3,14 @@ import { useAuth } from '@/context/AuthContext';
 import { ArrowLeft, User, Phone, Hash, UserCheck } from 'lucide-react';
 
 const ProfileView = () => {
-  const { user } = useAuth();
+  const { user, profile, profiles } = useAuth();
   const navigate = useNavigate();
 
-  if (!user) { navigate('/'); return null; }
+  if (!user || !profile) return null;
+
+  const uplineProfile = profile.upline_user_id 
+    ? profiles.find(p => p.user_id === profile.upline_user_id) 
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -17,21 +21,21 @@ const ProfileView = () => {
       <div className="px-4 -mt-4 space-y-4">
         <div className="glass-card rounded-2xl p-6 text-center animate-fade-in">
           <div className="w-20 h-20 rounded-full mx-auto mb-3 overflow-hidden bg-muted flex items-center justify-center border-2 border-primary/30">
-            {user.profilePhoto ? (
-              <img src={user.profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+            {profile.profile_photo ? (
+              <img src={profile.profile_photo} alt="Profile" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-3xl font-bold text-primary">{user.username[0].toUpperCase()}</span>
+              <span className="text-3xl font-bold text-primary">{profile.username[0].toUpperCase()}</span>
             )}
           </div>
-          <h2 className="text-lg font-bold font-heading text-foreground">{user.username}</h2>
-          <p className="text-xs text-muted-foreground">Code: {user.referralCode}</p>
+          <h2 className="text-lg font-bold font-heading text-foreground">{profile.username}</h2>
+          <p className="text-xs text-muted-foreground">Code: {profile.referral_code}</p>
         </div>
 
         <div className="glass-card rounded-2xl overflow-hidden">
           {[
-            { icon: User, label: 'Username', value: user.username },
-            { icon: Hash, label: 'Referral Code', value: user.referralCode },
-            { icon: Phone, label: 'Phone', value: user.phone || 'Not set' },
+            { icon: User, label: 'Username', value: profile.username },
+            { icon: Hash, label: 'Referral Code', value: profile.referral_code },
+            { icon: Phone, label: 'Phone', value: profile.phone || 'Not set' },
           ].map(({ icon: Icon, label, value }, i) => (
             <div key={label} className={`flex items-center gap-3 px-5 py-4 ${i < 2 ? 'border-b border-border/30' : ''}`}>
               <Icon size={16} className="text-primary" />
@@ -43,15 +47,15 @@ const ProfileView = () => {
           ))}
         </div>
 
-        {user.upline && (
+        {uplineProfile && (
           <div className="glass-card rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <UserCheck size={18} className="text-primary" />
               <h3 className="text-sm font-semibold text-foreground">Upline</h3>
             </div>
             <div className="glass rounded-xl p-3 space-y-1">
-              <p className="text-sm font-semibold text-foreground">{user.upline.username}</p>
-              <p className="text-xs text-muted-foreground">{user.upline.phone}</p>
+              <p className="text-sm font-semibold text-foreground">{uplineProfile.username}</p>
+              <p className="text-xs text-muted-foreground">{uplineProfile.phone}</p>
             </div>
           </div>
         )}

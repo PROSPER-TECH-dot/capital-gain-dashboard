@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Camera, Info, HeadphonesIcon, Lock, Smartphone, Eye, Gift, LogOut, ChevronRight, History } from 'lucide-react';
+import { Camera, Info, HeadphonesIcon, Lock, Smartphone, Eye, Gift, LogOut, ChevronRight, History, Shield } from 'lucide-react';
 import { useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 

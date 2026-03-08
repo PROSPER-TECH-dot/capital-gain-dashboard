@@ -5,7 +5,7 @@ import { ArrowLeft, Search, Edit3, Ban, CheckCircle, ChevronRight, Plus, Minus }
 import Notification from '@/components/Notification';
 
 const AdminUsers = () => {
-  const { user, isAdmin, profiles, updateProfile } = useAuth();
+  const { isAdmin, profiles, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -15,8 +15,8 @@ const AdminUsers = () => {
 
   if (!isAdmin) { navigate('/'); return null; }
 
-  const nonAdminProfiles = profiles.filter(p => p.user_id !== user?.id);
-  const filtered = nonAdminProfiles.filter(u =>
+  const allProfiles = profiles;
+  const filtered = allProfiles.filter(u =>
     u.username.toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase()) ||
     u.phone.includes(search)

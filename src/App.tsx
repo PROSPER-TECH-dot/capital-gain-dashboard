@@ -53,6 +53,7 @@ const AppRoutes = () => {
         <Route path="/change-password" element={user ? <ChangePassword /> : <Navigate to="/" />} />
         <Route path="/profile-view" element={user ? <ProfileView /> : <Navigate to="/" />} />
         <Route path="/gift-code" element={user ? <GiftCodePage /> : <Navigate to="/" />} />
+        <Route path="/history" element={user ? <TransactionHistory /> : <Navigate to="/" />} />
         <Route path="/app" element={<AppPage />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/admin" element={user ? <AdminDashboard /> : <Navigate to="/" />} />

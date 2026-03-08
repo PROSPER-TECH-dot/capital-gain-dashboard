@@ -19,10 +19,13 @@ const HomePage = () => {
   const [currentImage, setCurrentImage] = useState(0);
   const [notification, setNotification] = useState<string | null>(null);
 
+  const [slideDir, setSlideDir] = useState<'left' | 'right'>('left');
+
   useEffect(() => {
     const interval = setInterval(() => {
+      setSlideDir('left');
       setCurrentImage(prev => (prev + 1) % heroImages.length);
-    }, 2000);
+    }, 2300);
     return () => clearInterval(interval);
   }, []);
 

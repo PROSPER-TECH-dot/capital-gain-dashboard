@@ -5,7 +5,7 @@ import { ArrowLeft, Search, Edit3, Ban, CheckCircle, ChevronRight, Plus, Minus }
 import Notification from '@/components/Notification';
 
 const AdminUsers = () => {
-  const { user, isAdmin, profiles, updateProfile } = useAuth();
+  const { isAdmin, profiles, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -15,8 +15,8 @@ const AdminUsers = () => {
 
   if (!isAdmin) { navigate('/'); return null; }
 
-  const nonAdminProfiles = profiles.filter(p => p.user_id !== user?.id);
-  const filtered = nonAdminProfiles.filter(u =>
+  const allProfiles = profiles;
+  const filtered = allProfiles.filter(u =>
     u.username.toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase()) ||
     u.phone.includes(search)
@@ -40,7 +40,7 @@ const AdminUsers = () => {
       <div className="gradient-hero p-4 pb-8 rounded-b-3xl flex items-center gap-3">
         <button onClick={() => navigate('/admin')} className="text-primary-foreground"><ArrowLeft size={22} /></button>
         <h1 className="text-lg font-bold font-heading text-primary-foreground">Manage Users</h1>
-        <span className="ml-auto text-xs text-primary-foreground/70">{nonAdminProfiles.length} users</span>
+        <span className="ml-auto text-xs text-primary-foreground/70">{allProfiles.length} users</span>
       </div>
 
       <div className="px-4 -mt-4 space-y-3">

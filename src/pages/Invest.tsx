@@ -161,11 +161,19 @@ const InvestPage = () => {
         </div>
 
         {/* My Investments */}
-        {userInvestments.length > 0 && (
-          <div className="glass-card rounded-2xl p-4">
-            <h3 className="text-sm font-semibold font-heading text-foreground mb-3">My Investments</h3>
+        <div className="glass-card rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold font-heading text-foreground">My Investments</h3>
+            <button 
+              onClick={() => navigate('/my-investments')}
+              className="text-xs text-primary font-medium hover:text-primary/80"
+            >
+              View All
+            </button>
+          </div>
+          {userInvestments.length > 0 ? (
             <div className="space-y-2">
-              {userInvestments.map(inv => {
+              {userInvestments.slice(0, 2).map(inv => {
                 const daysLeft = Math.max(0, Math.ceil((new Date(inv.end_date).getTime() - Date.now()) / 86400000));
                 return (
                   <div key={inv.id} className="glass rounded-xl p-3 flex items-center justify-between">
@@ -182,9 +190,24 @@ const InvestPage = () => {
                   </div>
                 );
               })}
+              {userInvestments.length > 2 && (
+                <div className="text-center pt-2">
+                  <button 
+                    onClick={() => navigate('/my-investments')}
+                    className="text-xs text-primary font-medium hover:text-primary/80"
+                  >
+                    +{userInvestments.length - 2} more investments
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">No investments yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Start investing to see your portfolio</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

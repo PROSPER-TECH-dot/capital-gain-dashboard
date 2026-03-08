@@ -49,11 +49,38 @@ const WithdrawalPage = () => {
             <ArrowUpCircle size={20} className="text-accent" />
             <h2 className="text-sm font-semibold text-foreground">Withdraw Funds</h2>
           </div>
-          <p className="text-xs text-muted-foreground mb-4">Available: {profile.account_balance.toLocaleString()} UGX • 24/7 withdrawals</p>
-          <input type="number" value={amount} onChange={e => setAmount(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl glass text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mb-4"
-            placeholder={`Min ${settings.min_withdrawal.toLocaleString()} UGX`} />
-          <button onClick={handleWithdraw} className="w-full btn-accent py-3 text-sm">Withdraw Now</button>
+          {!hasActiveInvestment ? (
+            <div className="text-center py-6">
+              <div className="w-16 h-16 rounded-full glass flex items-center justify-center mx-auto mb-4">
+                <ArrowUpCircle size={24} className="text-muted-foreground" />
+              </div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Active Investment Required</h3>
+              <p className="text-xs text-muted-foreground mb-4">You need to have an active investment to withdraw funds</p>
+              <button 
+                onClick={() => navigate('/invest')}
+                className="btn-accent px-6 py-2 text-xs"
+              >
+                Start Investing
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground mb-4">
+                Available: {profile.account_balance.toLocaleString()} UGX • 
+                Active Investments: {userActiveInvestments.length}
+              </p>
+              <input 
+                type="number" 
+                value={amount} 
+                onChange={e => setAmount(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl glass text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mb-4"
+                placeholder={`Min ${settings.min_withdrawal.toLocaleString()} UGX`} 
+              />
+              <button onClick={handleWithdraw} className="w-full btn-accent py-3 text-sm">
+                Withdraw Now
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

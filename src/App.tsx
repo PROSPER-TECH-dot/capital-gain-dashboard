@@ -47,6 +47,7 @@ const AppRoutes = () => {
         <Route path="/" element={user ? <Navigate to="/home" /> : <Auth />} />
         <Route path="/home" element={user ? <HomePage /> : <Navigate to="/" />} />
         <Route path="/invest" element={user ? <InvestPage /> : <Navigate to="/" />} />
+        <Route path="/my-investments" element={user ? <MyInvestmentsPage /> : <Navigate to="/" />} />
         <Route path="/my-team" element={user ? <MyTeamPage /> : <Navigate to="/" />} />
         <Route path="/mine" element={user ? <MinePage /> : <Navigate to="/" />} />
         <Route path="/recharge" element={user ? <RechargePage /> : <Navigate to="/" />} />

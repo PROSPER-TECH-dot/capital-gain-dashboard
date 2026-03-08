@@ -9,6 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import Auth from "./pages/Auth";
 import HomePage from "./pages/Home";
 import InvestPage from "./pages/Invest";
+import MyInvestmentsPage from "./pages/MyInvestments";
 import MyTeamPage from "./pages/MyTeam";
 import MinePage from "./pages/Mine";
 import RechargePage from "./pages/Recharge";
@@ -46,6 +47,7 @@ const AppRoutes = () => {
         <Route path="/" element={user ? <Navigate to="/home" /> : <Auth />} />
         <Route path="/home" element={user ? <HomePage /> : <Navigate to="/" />} />
         <Route path="/invest" element={user ? <InvestPage /> : <Navigate to="/" />} />
+        <Route path="/my-investments" element={user ? <MyInvestmentsPage /> : <Navigate to="/" />} />
         <Route path="/my-team" element={user ? <MyTeamPage /> : <Navigate to="/" />} />
         <Route path="/mine" element={user ? <MinePage /> : <Navigate to="/" />} />
         <Route path="/recharge" element={user ? <RechargePage /> : <Navigate to="/" />} />

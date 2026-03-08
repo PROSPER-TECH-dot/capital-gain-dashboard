@@ -88,11 +88,11 @@ const AdminDashboard = () => {
       <div className="px-4 -mt-4 space-y-4 pb-8">
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: 'Total Users', value: nonAdminProfiles.length },
+            { label: 'Total Users', value: allProfiles.length },
             { label: "Today's Users", value: todayUsers },
             { label: "Yesterday's", value: yesterdayUsers },
-            { label: 'Total Deposits', value: `${(totalDeposits / 1000).toFixed(0)}k` },
-            { label: 'Total Withdrawals', value: `${(totalWithdrawals / 1000).toFixed(0)}k` },
+            { label: 'Total Deposits', value: formatTotal(totalDeposits) },
+            { label: 'Total Withdrawals', value: formatTotal(totalWithdrawals) },
             { label: 'Gift Codes', value: giftCodes.length },
           ].map(({ label, value }) => (
             <div key={label} className="glass-card rounded-xl p-3">

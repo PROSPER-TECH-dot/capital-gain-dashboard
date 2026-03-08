@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { TrendingUp, RefreshCw } from 'lucide-react';
+import { TrendingUp, RefreshCw, Wallet, Info } from 'lucide-react';
 import Notification from '@/components/Notification';
 
 const InvestPage = () => {
@@ -68,6 +68,25 @@ const InvestPage = () => {
         <p className="text-xs text-primary-foreground/70 mt-1">Earn {settings.daily_earnings}% daily returns</p>
       </div>
       <div className="px-4 -mt-6 space-y-4">
+        {/* Recharge Balance Card */}
+        <div className="glass-card rounded-2xl p-5 animate-fade-in">
+          <div className="flex items-center gap-2 mb-2">
+            <Wallet size={20} className="text-primary" />
+            <h2 className="text-sm font-semibold font-heading text-foreground">Available Balance</h2>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-xs text-muted-foreground">Recharge Balance</p>
+              <p className="text-xl font-bold text-primary">{profile.recharge_balance.toLocaleString()} UGX</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Account Balance</p>
+              <p className="text-xl font-bold text-foreground">{profile.account_balance.toLocaleString()} UGX</p>
+            </div>
+          </div>
+        </div>
+
+        {/* New Investment */}
         <div className="glass-card rounded-2xl p-5 animate-fade-in">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp size={20} className="text-primary" />
@@ -78,7 +97,7 @@ const InvestPage = () => {
             <div className="flex gap-2">
               <button onClick={() => setSource('recharge')}
                 className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all ${source === 'recharge' ? 'gradient-primary text-primary-foreground' : 'glass text-foreground'}`}>
-                Recharge Balance ({profile.recharge_balance.toLocaleString()})
+                Recharge Balance
               </button>
               <button onClick={() => setSource('reinvest')}
                 className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1 ${source === 'reinvest' ? 'gradient-primary text-primary-foreground' : 'glass text-foreground'}`}>
@@ -111,6 +130,37 @@ const InvestPage = () => {
           <button onClick={handleInvest} className="w-full btn-accent py-3 text-sm">Invest Now</button>
         </div>
 
+        {/* Investment Instructions */}
+        <div className="glass-card rounded-2xl p-5 animate-fade-in">
+          <div className="flex items-center gap-2 mb-3">
+            <Info size={18} className="text-primary" />
+            <h2 className="text-sm font-semibold font-heading text-foreground">How to Invest</h2>
+          </div>
+          <div className="space-y-3 text-xs text-muted-foreground">
+            <div className="flex gap-3">
+              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
+              <p><span className="text-foreground font-medium">Recharge your account</span> — Go to the Recharge page and deposit funds. The minimum deposit is {settings.min_deposit.toLocaleString()} UGX.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
+              <p><span className="text-foreground font-medium">Choose your source</span> — Select "Recharge Balance" to invest from deposits, or "Re-invest" to use your earnings.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
+              <p><span className="text-foreground font-medium">Enter amount</span> — The minimum investment is {settings.min_investment.toLocaleString()} UGX. Enter your desired investment amount.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">4</span>
+              <p><span className="text-foreground font-medium">Earn daily returns</span> — You earn {settings.daily_earnings}% daily on your investment for {settings.investment_period} days.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">5</span>
+              <p><span className="text-foreground font-medium">Withdraw earnings</span> — Your daily earnings are added to your account balance and can be withdrawn anytime (min {settings.min_withdrawal.toLocaleString()} UGX).</p>
+            </div>
+          </div>
+        </div>
+
+        {/* My Investments */}
         {userInvestments.length > 0 && (
           <div className="glass-card rounded-2xl p-4">
             <h3 className="text-sm font-semibold font-heading text-foreground mb-3">My Investments</h3>

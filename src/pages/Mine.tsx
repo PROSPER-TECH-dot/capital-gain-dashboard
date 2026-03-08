@@ -63,6 +63,17 @@ const MinePage = () => {
           </div>
         </div>
 
+        {isAdmin && (
+          <button onClick={() => navigate('/admin')}
+            className="w-full glass-card rounded-2xl flex items-center justify-between px-5 py-4 transition-colors hover:bg-primary/5">
+            <div className="flex items-center gap-3">
+              <Shield size={18} className="text-primary" />
+              <span className="text-sm font-semibold text-foreground">Admin Dashboard</span>
+            </div>
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </button>
+        )}
+
         <div className="glass-card rounded-2xl overflow-hidden">
           {menuItems.map(({ icon: Icon, label, path }, i) => (
             <button key={path} onClick={() => navigate(path)}

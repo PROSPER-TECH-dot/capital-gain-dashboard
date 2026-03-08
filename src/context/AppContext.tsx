@@ -28,6 +28,7 @@ export interface GiftCode {
   code: string;
   min_amount: number;
   max_amount: number;
+  max_redemptions: number;
   active: boolean;
   created_at: string;
 }

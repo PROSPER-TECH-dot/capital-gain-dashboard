@@ -1,9 +1,9 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, TrendingUp, Users, User } from 'lucide-react';
+import { Home, Users, User, CircleDollarSign } from 'lucide-react';
 
 const navItems = [
   { to: '/home', icon: Home, label: 'Home' },
-  { to: '/invest', icon: TrendingUp, label: 'Invest' },
+  { to: '/invest', icon: CircleDollarSign, label: 'Invest' },
   { to: '/my-team', icon: Users, label: 'My Team' },
   { to: '/mine', icon: User, label: 'Mine' },
 ];
@@ -28,7 +28,7 @@ const BottomNav = () => {
               }`
             }
           >
-            <Icon size={22} strokeWidth={isMainPage ? 2 : 1.5} />
+            <Icon size={22} strokeWidth={location.pathname === to ? 2 : 1.5} />
             <span className="text-[10px] font-medium">{label}</span>
           </NavLink>
         ))}

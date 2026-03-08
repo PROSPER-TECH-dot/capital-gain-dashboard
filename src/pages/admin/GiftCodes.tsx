@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, Power, PowerOff } from 'lucide-react';
 import Notification from '@/components/Notification';
 
 const AdminGiftCodes = () => {
   const { isAdmin } = useAuth();
-  const { giftCodes, addGiftCode } = useApp();
+  const { giftCodes, addGiftCode, toggleGiftCode } = useApp();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [minAmt, setMinAmt] = useState('100');
   const [maxAmt, setMaxAmt] = useState('1500');
+  const [maxRedemptions, setMaxRedemptions] = useState('100');
   const [notification, setNotification] = useState<string | null>(null);
 
   if (!isAdmin) { navigate('/'); return null; }
@@ -20,9 +21,15 @@ const AdminGiftCodes = () => {
     if (!code.trim()) { setNotification('Enter a code'); return; }
     const min = parseInt(minAmt) || 100;
     const max = parseInt(maxAmt) || 1500;
-    await addGiftCode({ code: code.trim().toUpperCase(), min_amount: min, max_amount: max });
+    const maxR = parseInt(maxRedemptions) || 100;
+    await addGiftCode({ code: code.trim().toUpperCase(), min_amount: min, max_amount: max, max_redemptions: maxR });
     setCode('');
     setNotification('Gift code created!');
+  };
+
+  const handleToggle = async (id: string, currentActive: boolean) => {
+    await toggleGiftCode(id, !currentActive);
+    setNotification(currentActive ? 'Gift code deactivated' : 'Gift code activated');
   };
 
   return (
@@ -53,6 +60,11 @@ const AdminGiftCodes = () => {
                 className="w-full px-3 py-2 rounded-xl glass text-sm text-foreground focus:outline-none" />
             </div>
           </div>
+          <div>
+            <label className="text-[10px] text-muted-foreground">Max Users (0 = unlimited)</label>
+            <input type="number" value={maxRedemptions} onChange={e => setMaxRedemptions(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl glass text-sm text-foreground focus:outline-none" />
+          </div>
           <button onClick={handleCreate} className="w-full btn-accent py-3 text-sm">Create Code</button>
         </div>
 
@@ -61,11 +73,12 @@ const AdminGiftCodes = () => {
             <div key={gc.id} className="glass-card rounded-xl p-3 flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-foreground tracking-widest">{gc.code}</p>
-                <p className="text-[10px] text-muted-foreground">{Number(gc.min_amount)}-{Number(gc.max_amount)} UGX</p>
+                <p className="text-[10px] text-muted-foreground">{Number(gc.min_amount)}-{Number(gc.max_amount)} UGX • Max: {gc.max_redemptions === 0 ? '∞' : gc.max_redemptions} users</p>
               </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full ${gc.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                {gc.active ? 'Active' : 'Inactive'}
-              </span>
+              <button onClick={() => handleToggle(gc.id, gc.active)}
+                className={`p-2 rounded-xl transition-all ${gc.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                {gc.active ? <Power size={16} /> : <PowerOff size={16} />}
+              </button>
             </div>
           ))}
         </div>

@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
 import { Users, ArrowUpDown, Settings, Gift, Menu, X, BarChart3, ChevronRight, Ban, CheckCircle, Edit3, RotateCcw, Search } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
-  const { user, isAdmin, profiles, updateProfile, refreshProfiles } = useAuth();
-  const { transactions, giftCodes, settings } = useApp();
+  const { isAdmin, profiles, updateProfile } = useAuth();
+  const { transactions, giftCodes } = useApp();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -17,16 +16,19 @@ const AdminDashboard = () => {
 
   if (!isAdmin) { navigate('/'); return null; }
 
-  const nonAdminProfiles = profiles.filter(p => p.user_id !== user?.id);
-  const filteredUsers = nonAdminProfiles.filter(u =>
-    u.username.toLowerCase().includes(search.toLowerCase()) ||
-    u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const allProfiles = profiles;
+  const filteredUsers = allProfiles
+    .filter(u =>
+      u.username.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      u.phone.includes(search)
+    )
+    .sort((a, b) => a.username.localeCompare(b.username));
 
   const today = new Date().toDateString();
   const yesterdayDate = new Date(Date.now() - 86400000).toDateString();
-  const todayUsers = nonAdminProfiles.filter(u => new Date(u.created_at).toDateString() === today).length;
-  const yesterdayUsers = nonAdminProfiles.filter(u => new Date(u.created_at).toDateString() === yesterdayDate).length;
+  const todayUsers = allProfiles.filter(u => new Date(u.created_at).toDateString() === today).length;
+  const yesterdayUsers = allProfiles.filter(u => new Date(u.created_at).toDateString() === yesterdayDate).length;
   const totalDeposits = transactions.filter(t => t.type === 'recharge').reduce((s, t) => s + Number(t.amount), 0);
   const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal').reduce((s, t) => s + Number(t.amount), 0);
 

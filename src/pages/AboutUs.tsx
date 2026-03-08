@@ -16,13 +16,13 @@ const AboutUs = () => {
         <div className="glass-card rounded-2xl p-5 animate-fade-in">
           <div className="flex items-center gap-2 mb-4">
             <Shield size={20} className="text-primary" />
-            <h2 className="text-base font-bold font-heading text-foreground">{settings.websiteName}</h2>
+            <h2 className="text-base font-bold font-heading text-foreground">{settings.website_name}</h2>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Welcome to {settings.websiteName}. We are a trusted investment platform dedicated to helping you grow your wealth through smart investments with daily returns.
+            Welcome to {settings.website_name}. We are a trusted investment platform dedicated to helping you grow your wealth through smart investments with daily returns.
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed mt-3">
-            Our platform offers {settings.dailyEarnings}% daily returns on investments with a {settings.investmentPeriod}-day investment period. Join thousands of satisfied investors today.
+            Our platform offers {settings.daily_earnings}% daily returns on investments with a {settings.investment_period}-day investment period. Join thousands of satisfied investors today.
           </p>
         </div>
       </div>

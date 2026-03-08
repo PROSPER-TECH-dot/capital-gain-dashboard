@@ -18,6 +18,10 @@ const WithdrawalPage = () => {
   const hasActiveInvestment = userActiveInvestments.length > 0;
 
   const handleWithdraw = async () => {
+    if (!hasActiveInvestment) {
+      setNotification('You need an active investment to withdraw funds'); return;
+    }
+    
     const amt = parseInt(amount);
     if (!amt || amt < settings.min_withdrawal) {
       setNotification(`Minimum withdrawal is ${settings.min_withdrawal.toLocaleString()} UGX`); return;

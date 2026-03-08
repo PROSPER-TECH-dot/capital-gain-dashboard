@@ -1,0 +1,1 @@
+ALTER TABLE public.gift_codes ADD COLUMN max_redemptions integer NOT NULL DEFAULT 0;

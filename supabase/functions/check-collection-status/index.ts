@@ -20,6 +20,115 @@ const normalizeStatus = (value: unknown) =>
     .trim()
     .toLowerCase()
 
+async function creditReferralCommissions(adminClient: any, userId: string, depositAmount: number) {
+  try {
+    // Get user's profile to find upline
+    const { data: userProfile } = await adminClient
+      .from('profiles')
+      .select('upline_user_id')
+      .eq('user_id', userId)
+      .single()
+
+    if (!userProfile?.upline_user_id) return
+
+    // Level 1: 25% commission
+    const l1UserId = userProfile.upline_user_id
+    const l1Commission = Math.floor(depositAmount * 25 / 100)
+    if (l1Commission > 0) {
+      const { data: l1Profile } = await adminClient
+        .from('profiles')
+        .select('account_balance, cumulative_income')
+        .eq('user_id', l1UserId)
+        .single()
+
+      if (l1Profile) {
+        await adminClient.from('profiles').update({
+          account_balance: Number(l1Profile.account_balance) + l1Commission,
+          cumulative_income: Number(l1Profile.cumulative_income) + l1Commission,
+        }).eq('user_id', l1UserId)
+
+        await adminClient.from('transactions').insert({
+          user_id: l1UserId,
+          type: 'referral',
+          amount: l1Commission,
+          status: 'completed',
+          description: `L1 referral commission from ${userId} deposit of ${depositAmount}`,
+        })
+      }
+    }
+
+    // Level 2: 3% commission
+    const { data: l1Profile2 } = await adminClient
+      .from('profiles')
+      .select('upline_user_id')
+      .eq('user_id', l1UserId)
+      .single()
+
+    if (!l1Profile2?.upline_user_id) return
+
+    const l2UserId = l1Profile2.upline_user_id
+    const l2Commission = Math.floor(depositAmount * 3 / 100)
+    if (l2Commission > 0) {
+      const { data: l2Profile } = await adminClient
+        .from('profiles')
+        .select('account_balance, cumulative_income')
+        .eq('user_id', l2UserId)
+        .single()
+
+      if (l2Profile) {
+        await adminClient.from('profiles').update({
+          account_balance: Number(l2Profile.account_balance) + l2Commission,
+          cumulative_income: Number(l2Profile.cumulative_income) + l2Commission,
+        }).eq('user_id', l2UserId)
+
+        await adminClient.from('transactions').insert({
+          user_id: l2UserId,
+          type: 'referral',
+          amount: l2Commission,
+          status: 'completed',
+          description: `L2 referral commission from ${userId} deposit of ${depositAmount}`,
+        })
+      }
+    }
+
+    // Level 3: 1% commission
+    const { data: l2Profile2 } = await adminClient
+      .from('profiles')
+      .select('upline_user_id')
+      .eq('user_id', l2UserId)
+      .single()
+
+    if (!l2Profile2?.upline_user_id) return
+
+    const l3UserId = l2Profile2.upline_user_id
+    const l3Commission = Math.floor(depositAmount * 1 / 100)
+    if (l3Commission > 0) {
+      const { data: l3Profile } = await adminClient
+        .from('profiles')
+        .select('account_balance, cumulative_income')
+        .eq('user_id', l3UserId)
+        .single()
+
+      if (l3Profile) {
+        await adminClient.from('profiles').update({
+          account_balance: Number(l3Profile.account_balance) + l3Commission,
+          cumulative_income: Number(l3Profile.cumulative_income) + l3Commission,
+        }).eq('user_id', l3UserId)
+
+        await adminClient.from('transactions').insert({
+          user_id: l3UserId,
+          type: 'referral',
+          amount: l3Commission,
+          status: 'completed',
+          description: `L3 referral commission from ${userId} deposit of ${depositAmount}`,
+        })
+      }
+    }
+  } catch (err) {
+    console.error('Referral commission error:', err)
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -152,6 +261,9 @@ Deno.serve(async (req) => {
             })
             .eq('user_id', userId)
         }
+
+        // Credit referral commissions on successful deposit
+        await creditReferralCommissions(adminClient, userId, amount)
       }
 
       return reply({ status: 'completed', success: true })

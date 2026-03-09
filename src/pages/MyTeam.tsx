@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useApp } from '@/context/AppContext';
 import { ChevronRight, Copy, Check, Link2 } from 'lucide-react';
 import Notification from '@/components/Notification';
 
 const MyTeamPage = () => {
   const { user, profile, profiles } = useAuth();
+  const { transactions } = useApp();
   const navigate = useNavigate();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -19,11 +21,22 @@ const MyTeamPage = () => {
   const l2 = l1.flatMap(u => profiles.filter(p => p.upline_user_id === u.user_id));
   const l3 = l2.flatMap(u => profiles.filter(p => p.upline_user_id === u.user_id));
 
+  // Calculate actual referral earnings per user from referral transactions
+  const referralTxs = transactions.filter(t => t.type === 'referral' && t.status === 'completed' && t.user_id === user.id);
+  
+  const getEarningsForUser = (subordinateUserId: string) => {
+    return referralTxs
+      .filter(t => t.description.includes(subordinateUserId))
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+  };
+
   const levels = [
     { level: 1, users: l1, earning: 25 },
     { level: 2, users: l2, earning: 3 },
     { level: 3, users: l3, earning: 1 },
   ];
+
+  const totalEarnings = referralTxs.reduce((sum, t) => sum + Number(t.amount), 0);
 
   const referralLink = `${window.location.origin}?ref=${profile.referral_code}`;
 
@@ -40,6 +53,10 @@ const MyTeamPage = () => {
       <div className="gradient-hero p-6 pb-10 rounded-b-3xl">
         <h1 className="text-xl font-bold font-heading text-primary-foreground">My Team</h1>
         <p className="text-xs text-primary-foreground/70 mt-1">Earn from referrals on 3 levels</p>
+        <div className="mt-3 glass rounded-xl p-3 bg-white/10">
+          <p className="text-xs text-primary-foreground/80">Total Referral Earnings</p>
+          <p className="text-lg font-bold text-primary-foreground">{totalEarnings.toLocaleString()} UGX</p>
+        </div>
       </div>
       <div className="px-4 -mt-6 space-y-4">
         {levels.map(({ level, users: levelUsers, earning }) => (
@@ -61,17 +78,20 @@ const MyTeamPage = () => {
                 {levelUsers.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-2">No subordinates yet</p>
                 ) : (
-                  levelUsers.map(u => (
-                    <div key={u.id} className="glass rounded-xl p-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">{u.username}</p>
-                        <p className="text-[10px] text-muted-foreground">Joined {new Date(u.created_at).toLocaleDateString()}</p>
+                  levelUsers.map(u => {
+                    const earned = getEarningsForUser(u.user_id);
+                    return (
+                      <div key={u.id} className="glass rounded-xl p-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-foreground">{u.username}</p>
+                          <p className="text-[10px] text-muted-foreground">Joined {new Date(u.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <p className="text-xs font-semibold text-primary">
+                          +{earned.toLocaleString()} UGX
+                        </p>
                       </div>
-                      <p className="text-xs font-semibold text-primary">
-                        +{((u.cumulative_income || 0) * earning / 100).toLocaleString()} UGX
-                      </p>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}

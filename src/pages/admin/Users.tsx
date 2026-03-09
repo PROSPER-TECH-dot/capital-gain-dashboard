@@ -5,7 +5,7 @@ import { ArrowLeft, Search, Edit3, Ban, CheckCircle, ChevronRight, Plus, Minus }
 import Notification from '@/components/Notification';
 
 const AdminUsers = () => {
-  const { isAdmin, profiles, updateProfile } = useAuth();
+  const { isAdmin, profiles, updateProfile, refreshProfiles } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);

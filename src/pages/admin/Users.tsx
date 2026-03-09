@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { ArrowLeft, Search, Edit3, Ban, CheckCircle, ChevronRight, Plus, Minus } from 'lucide-react';
+import { useApp } from '@/context/AppContext';
+import { ArrowLeft, Search, Ban, CheckCircle, ChevronRight, Plus, Minus } from 'lucide-react';
 import Notification from '@/components/Notification';
 
 const AdminUsers = () => {
   const { isAdmin, profiles, updateProfile, refreshProfiles } = useAuth();
+  const { addTransaction } = useApp();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -29,7 +31,21 @@ const AdminUsers = () => {
     const newVal = current + amount;
     if (newVal < 0) { setNotification('Balance cannot go below 0'); return; }
     await updateProfile(userId, { [field]: newVal } as any);
-    // Force refresh to show updated values
+
+    // Log transaction for admin credit/debit
+    const txType = amount > 0 ? 'admin_credit' : 'admin_debit';
+    const txDesc = amount > 0 
+      ? `Admin credited ${Math.abs(amount).toLocaleString()} UGX to ${field.replace('_', ' ')}`
+      : `Admin debited ${Math.abs(amount).toLocaleString()} UGX from ${field.replace('_', ' ')}`;
+    
+    await addTransaction({
+      user_id: userId,
+      type: txType,
+      amount: Math.abs(amount),
+      status: 'completed',
+      description: txDesc,
+    });
+
     await refreshProfiles();
     setCreditAmount('');
     setCreditField(null);
@@ -71,7 +87,6 @@ const AdminUsers = () => {
 
               {selectedUser === u.user_id && (
                 <div className="mt-3 pt-3 border-t border-border/30 space-y-3 animate-fade-in">
-                  {/* Balance overview */}
                   <div className="grid grid-cols-3 gap-2 text-center">
                     {[
                       { label: 'Account', field: 'account_balance', value: Number(u.account_balance) },
@@ -85,7 +100,6 @@ const AdminUsers = () => {
                     ))}
                   </div>
 
-                  {/* Credit / Debit controls */}
                   <div className="space-y-2">
                     <p className="text-[10px] text-muted-foreground font-semibold">Credit / Debit Balance</p>
                     <div className="flex gap-2">
@@ -112,7 +126,6 @@ const AdminUsers = () => {
                     )}
                   </div>
 
-                  {/* Ban toggle */}
                   <button onClick={() => updateProfile(u.user_id, { is_banned: !u.is_banned })}
                     className={`w-full py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 ${
                       u.is_banned ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'

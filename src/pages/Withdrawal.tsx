@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { ArrowLeft, ArrowUpCircle, Phone, Info, Wallet } from 'lucide-react';
+import { ArrowLeft, ArrowUpCircle, Phone, Info, Wallet, Clock } from 'lucide-react';
 import Notification from '@/components/Notification';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -151,6 +151,12 @@ const WithdrawalPage = () => {
                 {processing ? 'Processing...' : 'Withdraw Now'}
               </button>
 
+              {/* View Withdrawal History Link */}
+              <button onClick={() => navigate('/history?filter=withdrawal')}
+                className="w-full mt-3 flex items-center justify-center gap-2 text-primary text-xs font-medium hover:text-primary/80 transition-colors">
+                <Clock size={14} /> View Withdrawal History
+              </button>
+
               <p className="text-[10px] text-center text-muted-foreground mt-2">
                 Powered by Capital Gain Pay™ • Instant Withdrawals
               </p>
@@ -171,11 +177,11 @@ const WithdrawalPage = () => {
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-              <p><span className="text-foreground font-medium">Enter amount</span> — Minimum withdrawal is {settings.min_withdrawal.toLocaleString()} UGX. Enter the amount you want to withdraw.</p>
+              <p><span className="text-foreground font-medium">Enter amount</span> — Minimum withdrawal is {settings.min_withdrawal.toLocaleString()} UGX.</p>
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-              <p><span className="text-foreground font-medium">Withdrawal fee</span> — A {withdrawalFee}% fee is deducted from your withdrawal amount. The actual amount you receive is shown before confirming.</p>
+              <p><span className="text-foreground font-medium">Withdrawal fee</span> — A {withdrawalFee}% fee is deducted from your withdrawal amount.</p>
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">4</span>

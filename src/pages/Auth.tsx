@@ -24,12 +24,11 @@ const Auth = () => {
   const [regConfirm, setRegConfirm] = useState('');
   const [regReferral, setRegReferral] = useState('');
 
-  // Auto-fill referral code from URL params
   useEffect(() => {
     const ref = searchParams.get('ref') || searchParams.get('referral');
     if (ref) {
       setRegReferral(ref);
-      setIsLogin(false); // Switch to register tab
+      setIsLogin(false);
     }
   }, [searchParams]);
 
@@ -41,7 +40,11 @@ const Auth = () => {
     const result = await login(loginId, loginPass);
     setLoading(false);
     if (result.error) setError(result.error);
-    else navigate('/home');
+    else {
+      // Store welcome notification for home page
+      sessionStorage.setItem('login_welcome', loginId);
+      navigate('/home');
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -56,7 +59,10 @@ const Auth = () => {
     const result = await register({ username: regUsername, email: regEmail, phone: regPhone, password: regPass, referralCode: regReferral || undefined });
     setLoading(false);
     if (result.error) setError(result.error);
-    else navigate('/home');
+    else {
+      sessionStorage.setItem('register_success', '1');
+      navigate('/home');
+    }
   };
 
   return (

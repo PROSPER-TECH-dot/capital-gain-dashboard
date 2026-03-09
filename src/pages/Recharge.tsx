@@ -64,12 +64,12 @@ const RechargePage = () => {
           setProcessing(false);
           setStatusMessage('');
           setNotification(data?.message || 'Payment failed or was cancelled.');
-          setTimeout(() => navigate('/home'), 2000);
+          setTimeout(() => navigate('/home'), 1500);
         }
       } catch (e) {
         // Keep polling on network errors
       }
-    }, 10000);
+    }, 5000);
   };
 
   useEffect(() => {

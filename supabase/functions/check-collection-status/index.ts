@@ -175,8 +175,7 @@ Deno.serve(async (req) => {
     }
 
     if (PROCESSING_STATUSES.has(providerStatus)) {
-      const txAgeMs = Date.now() - new Date(pendingTx.created_at).getTime()
-      if (txAgeMs > 120000) {
+      if (txAgeMs > MAX_PENDING_MS) {
         return await failPendingTransaction('Payment was not confirmed in time and was automatically rejected.')
       }
 

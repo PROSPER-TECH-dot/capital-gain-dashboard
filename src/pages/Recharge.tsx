@@ -69,7 +69,7 @@ const RechargePage = () => {
       } catch (e) {
         // Keep polling on network errors
       }
-    }, 5000);
+    }, 1000);
   };
 
   useEffect(() => {

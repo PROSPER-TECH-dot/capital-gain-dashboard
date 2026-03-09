@@ -5,12 +5,12 @@ import { useApp } from '@/context/AppContext';
 import { Wallet, ArrowDownCircle, ArrowUpCircle, CalendarCheck, Clock, TrendingUp, Gift, Users } from 'lucide-react';
 import LiveTicker from '@/components/LiveTicker';
 import Notification from '@/components/Notification';
+import logo1 from '@/assets/capital_gain_logo_1.png';
+import logo2 from '@/assets/capital_gain_logo_2.png';
+import logo3 from '@/assets/capital_gain_logo_3.png';
+import logo4 from '@/assets/capital_gain_logo_4.png';
 
-const heroImages = [
-  'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1553729459-uj8ax09dq67?w=800&h=300&fit=crop',
-];
+const heroImages = [logo1, logo2, logo3, logo4];
 
 const HomePage = () => {
   const { user, profile, updateProfile, refreshProfile } = useAuth();
@@ -53,29 +53,24 @@ const HomePage = () => {
     <div className="min-h-screen pb-20 bg-background">
       {notification && <Notification message={notification} onClose={() => setNotification(null)} />}
 
-      <div className="relative w-full h-44 overflow-hidden rounded-b-3xl z-0">
+      <div className="relative w-full h-44 overflow-hidden rounded-b-3xl z-0 bg-white">
         {heroImages.map((img, i) => {
           const isActive = i === currentImage;
           const isPrev = i === (currentImage - 1 + heroImages.length) % heroImages.length;
           return (
-            <img key={i} src={img} alt="Investment"
+            <img key={i} src={img} alt="Capital Gain Investment"
               style={{
                 position: 'absolute',
                 inset: 0,
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover',
+                objectFit: 'contain',
+                padding: '12px',
                 transform: isActive ? 'translateX(0%)' : isPrev ? 'translateX(-100%)' : 'translateX(100%)',
                 transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
               }} />
           );
         })}
-        <div className="absolute inset-0 gradient-hero opacity-60" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="text-2xl font-bold font-heading text-primary-foreground drop-shadow-lg flex items-baseline justify-center">
-            🪙{settings.website_name}
-          </h1>
-        </div>
       </div>
 
       <div className="relative z-10 px-4 -mt-6 space-y-4">

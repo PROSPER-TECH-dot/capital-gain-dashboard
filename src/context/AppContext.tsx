@@ -126,7 +126,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchTodayCheckIns = async () => {
     if (!user) return;
-    const today = new Date().toISOString().split('T')[0];
+    // Use East Africa Time (UTC+3) for midnight reset
+    const now = new Date();
+    const eatOffset = 3 * 60; // EAT = UTC+3
+    const eatDate = new Date(now.getTime() + eatOffset * 60000);
+    const today = eatDate.toISOString().split('T')[0];
     const { data } = await supabase
       .from('check_ins')
       .select('user_id')

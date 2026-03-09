@@ -5,7 +5,7 @@ import { ArrowLeft, Search, Edit3, Ban, CheckCircle, ChevronRight, Plus, Minus }
 import Notification from '@/components/Notification';
 
 const AdminUsers = () => {
-  const { isAdmin, profiles, updateProfile } = useAuth();
+  const { isAdmin, profiles, updateProfile, refreshProfiles } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -29,9 +29,11 @@ const AdminUsers = () => {
     const newVal = current + amount;
     if (newVal < 0) { setNotification('Balance cannot go below 0'); return; }
     await updateProfile(userId, { [field]: newVal } as any);
+    // Force refresh to show updated values
+    await refreshProfiles();
     setCreditAmount('');
     setCreditField(null);
-    setNotification(`${amount > 0 ? 'Credited' : 'Debited'} ${Math.abs(amount).toLocaleString()} UGX`);
+    setNotification(`${amount > 0 ? 'Credited' : 'Debited'} ${Math.abs(amount).toLocaleString()} UGX successfully!`);
   };
 
   return (

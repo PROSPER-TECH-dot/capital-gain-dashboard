@@ -126,31 +126,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (emailOrUsername: string, password: string) => {
-    // Try to find by username first
-    let email = emailOrUsername;
-    if (!emailOrUsername.includes('@')) {
-      const { data } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('username', emailOrUsername)
-        .single();
-      if (data) email = data.email;
-      else return { error: 'User not found' };
-    }
+    const identifier = emailOrUsername.trim();
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.functions.invoke('username-login', {
+      body: { identifier, password },
+    });
+
     if (error) return { error: error.message };
 
-    // Check if banned
-    const { data: prof } = await supabase
-      .from('profiles')
-      .select('is_banned')
-      .eq('email', email)
-      .single();
-    if (prof?.is_banned) {
-      await supabase.auth.signOut();
-      return { error: 'Account is banned' };
+    const session = (data as any)?.session;
+    if (!session?.access_token || !session?.refresh_token) {
+      return { error: (data as any)?.error || 'Login failed' };
     }
+
+    const { error: setSessionError } = await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+
+    if (setSessionError) return { error: setSessionError.message };
     return {};
   };
 

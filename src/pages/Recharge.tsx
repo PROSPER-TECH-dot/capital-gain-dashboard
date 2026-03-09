@@ -20,8 +20,6 @@ const RechargePage = () => {
   const [statusMessage, setStatusMessage] = useState('');
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
-  if (!user || !profile) return null;
-
   const stopPolling = () => {
     if (pollingRef.current) {
       clearInterval(pollingRef.current);

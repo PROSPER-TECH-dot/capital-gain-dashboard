@@ -151,6 +151,10 @@ const Auth = () => {
             </form>
           )}
         </div>
+        
+        <div className="text-center mt-8">
+          <p className="text-primary-foreground/60 text-xs">© 2026 capital gain investment inc.</p>
+        </div>
       </div>
     </div>
   );

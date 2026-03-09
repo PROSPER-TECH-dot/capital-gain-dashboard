@@ -32,8 +32,11 @@ const AdminDashboard = () => {
   const totalDeposits = transactions.filter(t => t.type === 'recharge' && t.status === 'completed').reduce((s, t) => s + Number(t.amount), 0);
   const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal' && t.status === 'completed').reduce((s, t) => s + Number(t.amount), 0);
   
-  // Cumulative income = sum of all users' earnings (checkin, earning, referral, gift - NOT deposits)
-  const totalCumulativeIncome = allProfiles.reduce((s, p) => s + Number(p.cumulative_income), 0);
+  // Cumulative income = sum of all completed earning transactions (checkin, earning, referral, gift - NOT deposits/recharges)
+  const earningTypes = ['earning', 'referral', 'gift', 'checkin', 'check_in'];
+  const totalCumulativeIncome = transactions
+    .filter(t => earningTypes.includes(t.type) && t.status === 'completed')
+    .reduce((s, t) => s + Number(t.amount), 0);
   
   const formatTotal = (amount: number) => amount.toLocaleString();
 

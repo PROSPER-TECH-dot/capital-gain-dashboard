@@ -72,6 +72,8 @@ const RechargePage = () => {
     return () => stopPolling();
   }, []);
 
+  if (!user || !profile) return null;
+
   const handleRecharge = async () => {
     const amt = parseInt(amount);
     if (!amt || amt < settings.min_deposit) {

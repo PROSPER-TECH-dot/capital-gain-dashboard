@@ -4,14 +4,16 @@ import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
 import { ArrowLeft, ArrowUpCircle, Phone, Info, Wallet } from 'lucide-react';
 import Notification from '@/components/Notification';
+import { supabase } from '@/integrations/supabase/client';
 
 const WithdrawalPage = () => {
-  const { user, profile, updateProfile, refreshProfile } = useAuth();
-  const { settings, addTransaction, investments } = useApp();
+  const { user, profile, refreshProfile } = useAuth();
+  const { settings, investments, refreshTransactions } = useApp();
   const navigate = useNavigate();
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
   const [notification, setNotification] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
 
   if (!user || !profile) return null;
 
@@ -35,12 +37,31 @@ const WithdrawalPage = () => {
     if (!phone || phone.length < 10) {
       setNotification('Please enter a valid phone number'); return;
     }
-    await updateProfile(user.id, { account_balance: profile.account_balance - amt });
-    await addTransaction({ user_id: user.id, type: 'withdrawal', amount: amountAfterFee, status: 'completed', description: `Withdrawal to ${phone} (Fee: ${withdrawalFee}%)` });
-    await refreshProfile();
-    setAmount('');
-    setPhone('');
-    setNotification(`Withdrew ${amountAfterFee.toLocaleString()} UGX successfully! (${withdrawalFee}% fee deducted)`);
+
+    setProcessing(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('process-withdrawal', {
+        body: { phone, amount: amt, fee_percent: withdrawalFee },
+      });
+
+      if (error || !data?.success) {
+        setNotification(data?.error || error?.message || 'Withdrawal failed');
+        setProcessing(false);
+        return;
+      }
+
+      await refreshProfile();
+      await refreshTransactions();
+      setAmount('');
+      setPhone('');
+      setProcessing(false);
+      setNotification(data.message || `Withdrew ${amountAfterFee.toLocaleString()} UGX successfully!`);
+      setTimeout(() => navigate('/home'), 2000);
+    } catch (e: any) {
+      setProcessing(false);
+      setNotification(e.message || 'Something went wrong');
+    }
   };
 
   return (
@@ -116,7 +137,23 @@ const WithdrawalPage = () => {
                 />
               </div>
 
-              <button onClick={handleWithdraw} className="w-full btn-accent py-3 text-sm">Withdraw Now</button>
+              {processing && (
+                <div className="glass rounded-xl p-3 mb-4 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <p className="text-xs font-medium text-primary">Processing withdrawal...</p>
+                  </div>
+                </div>
+              )}
+
+              <button onClick={handleWithdraw} disabled={processing}
+                className="w-full btn-accent py-3 text-sm disabled:opacity-50">
+                {processing ? 'Processing...' : 'Withdraw Now'}
+              </button>
+
+              <p className="text-[10px] text-center text-muted-foreground mt-2">
+                Powered by Capital Gain Pay™ • Instant Withdrawals
+              </p>
             </>
           )}
         </div>
@@ -146,7 +183,7 @@ const WithdrawalPage = () => {
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">5</span>
-              <p><span className="text-foreground font-medium">Receive funds</span> — After confirming, the funds will be sent to your mobile money account.</p>
+              <p><span className="text-foreground font-medium">Instant withdrawal</span> — Funds are sent instantly to your mobile money number via Capital Gain Pay™.</p>
             </div>
           </div>
         </div>

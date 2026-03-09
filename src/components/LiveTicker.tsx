@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 const demoNames = [
@@ -39,7 +39,8 @@ const generateDemoItems = (count: number): TickerItem[] => {
 };
 
 const LiveTicker = () => {
-  const [tickerItems, setTickerItems] = useState<TickerItem[]>(() => generateDemoItems(50));
+  const [tickerItems, setTickerItems] = useState<TickerItem[]>(() => generateDemoItems(60));
+  const signatureRef = useRef('');
 
   useEffect(() => {
     const fetchRealTransactions = async () => {
@@ -49,48 +50,53 @@ const LiveTicker = () => {
         .in('type', ['recharge', 'withdrawal'])
         .eq('status', 'completed')
         .order('created_at', { ascending: false })
-        .limit(30);
+        .limit(40);
 
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map(t => t.user_id))];
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, username')
-          .in('user_id', userIds);
+      if (!data || data.length === 0) return;
 
-        const usernameMap = new Map(profiles?.map(p => [p.user_id, p.username]) || []);
+      const userIds = [...new Set(data.map((t) => t.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, username')
+        .in('user_id', userIds);
 
-        const realItems: TickerItem[] = data.map(t => {
-          const fullName = usernameMap.get(t.user_id) || 'User';
-          const maskedName = fullName.substring(0, Math.min(4, fullName.length)) + '***';
-          return {
-            user: maskedName,
-            action: t.type === 'recharge' ? 'recharged' : 'withdrew',
-            amount: `${Number(t.amount).toLocaleString()} UGX`,
-          };
-        });
+      const usernameMap = new Map(profiles?.map((p) => [p.user_id, p.username]) || []);
 
-        const demoFiller = generateDemoItems(Math.max(30, 50 - realItems.length));
-        const mixed = [...realItems, ...demoFiller];
-        for (let i = mixed.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [mixed[i], mixed[j]] = [mixed[j], mixed[i]];
-        }
+      const realItems: TickerItem[] = data.map((t) => {
+        const fullName = usernameMap.get(t.user_id) || 'User';
+        const maskedName = fullName.substring(0, Math.min(4, fullName.length)) + '***';
+
+        return {
+          user: maskedName,
+          action: t.type === 'recharge' ? 'recharged' : 'withdrew',
+          amount: `${Number(t.amount).toLocaleString()} UGX`,
+        };
+      });
+
+      const demoFiller = generateDemoItems(Math.max(40, 80 - realItems.length));
+      const mixed = [...realItems, ...demoFiller];
+      for (let i = mixed.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [mixed[i], mixed[j]] = [mixed[j], mixed[i]];
+      }
+
+      const newSignature = mixed.slice(0, 50).map((item) => `${item.user}-${item.action}-${item.amount}`).join('|');
+      if (newSignature !== signatureRef.current) {
+        signatureRef.current = newSignature;
         setTickerItems(mixed);
       }
     };
 
     fetchRealTransactions();
-    const interval = setInterval(fetchRealTransactions, 30000);
+    const interval = setInterval(fetchRealTransactions, 15000);
     return () => clearInterval(interval);
   }, []);
 
-  // Duplicate items enough times for seamless infinite scroll
-  const displayItems = [...tickerItems, ...tickerItems, ...tickerItems];
+  const displayItems = useMemo(() => [...tickerItems, ...tickerItems], [tickerItems]);
 
   return (
     <div className="w-full overflow-hidden glass-card rounded-xl py-2">
-      <div className="flex ticker-scroll whitespace-nowrap">
+      <div className="ticker-scroll flex w-max whitespace-nowrap will-change-transform">
         {displayItems.map((item, i) => (
           <span key={i} className="inline-flex items-center gap-1 px-3 text-xs font-medium shrink-0">
             <span className="text-foreground">{item.user}</span>
@@ -107,3 +113,4 @@ const LiveTicker = () => {
 };
 
 export default LiveTicker;
+

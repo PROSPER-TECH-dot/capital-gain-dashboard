@@ -147,7 +147,9 @@
   }
 
   .ticker-scroll {
-    animation: tickerScroll 15s linear infinite;
+    animation: tickerScroll 10s linear infinite;
+    width: max-content;
+    will-change: transform;
   }
 }
 
@@ -167,8 +169,8 @@
 }
 
 @keyframes tickerScroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
 }
 
 @keyframes fadeIn {

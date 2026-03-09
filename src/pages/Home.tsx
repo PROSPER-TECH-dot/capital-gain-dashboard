@@ -53,7 +53,7 @@ const HomePage = () => {
     <div className="min-h-screen pb-20 bg-background">
       {notification && <Notification message={notification} onClose={() => setNotification(null)} />}
 
-      <div className="relative w-full h-44 overflow-hidden rounded-b-3xl z-0 bg-white">
+      <div className="relative w-full h-44 overflow-hidden rounded-b-3xl z-0">
         {heroImages.map((img, i) => {
           const isActive = i === currentImage;
           const isPrev = i === (currentImage - 1 + heroImages.length) % heroImages.length;
@@ -64,13 +64,18 @@ const HomePage = () => {
                 inset: 0,
                 width: '100%',
                 height: '100%',
-                objectFit: 'contain',
-                padding: '12px',
+                objectFit: 'cover',
                 transform: isActive ? 'translateX(0%)' : isPrev ? 'translateX(-100%)' : 'translateX(100%)',
                 transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
               }} />
           );
         })}
+        <div className="absolute inset-0 gradient-hero opacity-60" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <h1 className="text-2xl font-bold font-heading text-primary-foreground drop-shadow-lg flex items-baseline justify-center">
+            🪙{settings.website_name}
+          </h1>
+        </div>
       </div>
 
       <div className="relative z-10 px-4 -mt-6 space-y-4">

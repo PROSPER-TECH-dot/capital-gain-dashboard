@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
 
     const { data: txRows, error: txError } = await adminClient
       .from('transactions')
-      .select('id, amount, status, created_at')
+      .select('id, amount, status, description, created_at')
       .eq('user_id', userId)
       .eq('type', 'recharge')
       .like('description', `%Ref: ${transaction_id}%`)

@@ -27,7 +27,7 @@ const CustomerSupport = () => {
             </div>
             <ExternalLink size={16} className="text-muted-foreground" />
           </a>
-        ))
+        ))}
 
         <a href={settings.whatsapp_group} target="_blank" rel="noopener noreferrer"
           className="glass-card rounded-2xl p-5 flex items-center gap-4 block">

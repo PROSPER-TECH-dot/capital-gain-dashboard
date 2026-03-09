@@ -16,7 +16,6 @@ const InvestPage = () => {
   if (!user || !profile) return null;
 
   const userInvestments = investments.filter(i => i.user_id === user.id);
-  const totalInvested = userInvestments.filter(i => i.active).reduce((s, i) => s + Number(i.amount), 0);
 
   const handleInvest = async () => {
     const amt = parseInt(amount);
@@ -68,7 +67,7 @@ const InvestPage = () => {
         <p className="text-xs text-primary-foreground/70 mt-1">Earn {settings.daily_earnings}% daily returns</p>
       </div>
       <div className="px-4 -mt-6 space-y-4">
-        {/* Recharge Balance Card */}
+        {/* Balance Card */}
         <div className="glass-card rounded-2xl p-5 animate-fade-in">
           <div className="flex items-center gap-2 mb-2">
             <Wallet size={20} className="text-primary" />
@@ -96,11 +95,19 @@ const InvestPage = () => {
             <label className="text-xs text-muted-foreground mb-2 block">Investment Source</label>
             <div className="flex gap-2">
               <button onClick={() => setSource('recharge')}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all ${source === 'recharge' ? 'gradient-primary text-primary-foreground' : 'glass text-foreground'}`}>
+                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                  source === 'recharge' 
+                    ? 'gradient-primary text-primary-foreground shadow-lg -translate-y-1' 
+                    : 'glass text-foreground'
+                }`}>
                 Recharge Balance
               </button>
               <button onClick={() => setSource('reinvest')}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1 ${source === 'reinvest' ? 'gradient-primary text-primary-foreground' : 'glass text-foreground'}`}>
+                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1 ${
+                  source === 'reinvest' 
+                    ? 'gradient-primary text-primary-foreground shadow-lg -translate-y-1' 
+                    : 'glass text-foreground'
+                }`}>
                 <RefreshCw size={12} /> Re-invest
               </button>
             </div>
@@ -130,7 +137,7 @@ const InvestPage = () => {
           <button onClick={handleInvest} className="w-full btn-accent py-3 text-sm">Invest Now</button>
         </div>
 
-        {/* Investment Instructions */}
+        {/* Instructions */}
         <div className="glass-card rounded-2xl p-5 animate-fade-in">
           <div className="flex items-center gap-2 mb-3">
             <Info size={18} className="text-primary" />
@@ -147,7 +154,7 @@ const InvestPage = () => {
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-              <p><span className="text-foreground font-medium">Enter amount</span> — The minimum investment is {settings.min_investment.toLocaleString()} UGX. Enter your desired investment amount.</p>
+              <p><span className="text-foreground font-medium">Enter amount</span> — The minimum investment is {settings.min_investment.toLocaleString()} UGX.</p>
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">4</span>
@@ -164,12 +171,7 @@ const InvestPage = () => {
         <div className="glass-card rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold font-heading text-foreground">My Investments</h3>
-            <button 
-              onClick={() => navigate('/my-investments')}
-              className="text-xs text-primary font-medium hover:text-primary/80"
-            >
-              View All
-            </button>
+            <button onClick={() => navigate('/my-investments')} className="text-xs text-primary font-medium hover:text-primary/80">View All</button>
           </div>
           {userInvestments.length > 0 ? (
             <div className="space-y-2">
@@ -192,10 +194,7 @@ const InvestPage = () => {
               })}
               {userInvestments.length > 2 && (
                 <div className="text-center pt-2">
-                  <button 
-                    onClick={() => navigate('/my-investments')}
-                    className="text-xs text-primary font-medium hover:text-primary/80"
-                  >
+                  <button onClick={() => navigate('/my-investments')} className="text-xs text-primary font-medium hover:text-primary/80">
                     +{userInvestments.length - 2} more investments
                   </button>
                 </div>

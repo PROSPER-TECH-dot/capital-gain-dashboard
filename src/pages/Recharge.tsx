@@ -29,7 +29,7 @@ const RechargePage = () => {
 
   const pollStatus = (transactionId: string) => {
     let attempts = 0;
-    const maxAttempts = 30;
+    const maxAttempts = 8;
 
     pollingRef.current = setInterval(async () => {
       attempts++;

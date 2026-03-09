@@ -18,7 +18,7 @@ const RechargePage = () => {
   const [notification, setNotification] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPolling = () => {
     if (pollingRef.current) {

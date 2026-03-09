@@ -14,6 +14,7 @@ const JULYPAY_BASE = 'https://app.julypay.net/api/v1'
 const SUCCESS_STATUSES = new Set(['completed', 'successful', 'success'])
 const FAILED_STATUSES = new Set(['failed', 'cancelled', 'canceled', 'rejected', 'declined', 'expired', 'timeout', 'failed_api_error', 'failed_api_unreachable', 'failed_unknown'])
 const PROCESSING_STATUSES = new Set(['processing', 'pending', 'queued', 'initiated'])
+const MAX_PENDING_MS = 5000
 
 const normalizeStatus = (value: unknown) =>
   String(value ?? '')

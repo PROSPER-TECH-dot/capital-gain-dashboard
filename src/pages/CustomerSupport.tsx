@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Phone, ExternalLink } from 'lucide-react';
+import { ArrowLeft, MessageCircle, ExternalLink } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
 const CustomerSupport = () => {
@@ -23,7 +23,7 @@ const CustomerSupport = () => {
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground">{s.name}</p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone size={12} /> {s.number}</p>
+              <p className="text-xs text-muted-foreground">Chat on WhatsApp</p>
             </div>
             <ExternalLink size={16} className="text-muted-foreground" />
           </a>

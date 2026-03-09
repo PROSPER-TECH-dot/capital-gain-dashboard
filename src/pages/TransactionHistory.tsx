@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { ArrowLeft, ArrowDownCircle, ArrowUpCircle, Gift, CalendarCheck, TrendingUp, Users, Filter } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeft, ArrowDownCircle, ArrowUpCircle, Gift, CalendarCheck, TrendingUp, Users, Filter, Wallet } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const typeConfig: Record<string, { icon: typeof Gift; label: string; colorClass: string; bgClass: string; sign: string }> = {
   recharge: { icon: ArrowDownCircle, label: 'Recharge', colorClass: 'text-primary', bgClass: 'bg-primary/10', sign: '+' },
@@ -12,6 +12,8 @@ const typeConfig: Record<string, { icon: typeof Gift; label: string; colorClass:
   referral: { icon: Users, label: 'Referral', colorClass: 'text-primary', bgClass: 'bg-primary/10', sign: '+' },
   gift: { icon: Gift, label: 'Gift', colorClass: 'text-primary', bgClass: 'bg-primary/10', sign: '+' },
   investment: { icon: TrendingUp, label: 'Investment', colorClass: 'text-accent', bgClass: 'bg-accent/10', sign: '-' },
+  admin_credit: { icon: Wallet, label: 'Admin Credit', colorClass: 'text-primary', bgClass: 'bg-primary/10', sign: '+' },
+  admin_debit: { icon: Wallet, label: 'Admin Debit', colorClass: 'text-destructive', bgClass: 'bg-destructive/10', sign: '-' },
 };
 
 const filters = ['all', 'recharge', 'withdrawal', 'earning', 'checkin', 'gift', 'referral', 'investment'] as const;
@@ -20,7 +22,14 @@ const TransactionHistory = () => {
   const { user } = useAuth();
   const { transactions } = useApp();
   const navigate = useNavigate();
-  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [searchParams] = useSearchParams();
+  const initialFilter = searchParams.get('filter') || 'all';
+  const [activeFilter, setActiveFilter] = useState<string>(initialFilter);
+
+  useEffect(() => {
+    const f = searchParams.get('filter');
+    if (f) setActiveFilter(f);
+  }, [searchParams]);
 
   if (!user) return null;
 
@@ -38,12 +47,13 @@ const TransactionHistory = () => {
           <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-primary-foreground/10 flex items-center justify-center">
             <ArrowLeft size={18} className="text-primary-foreground" />
           </button>
-          <h1 className="text-lg font-bold font-heading text-primary-foreground">Transaction History</h1>
+          <h1 className="text-lg font-bold font-heading text-primary-foreground">
+            {activeFilter === 'withdrawal' ? 'Withdrawal History' : 'Transaction History'}
+          </h1>
         </div>
       </div>
 
       <div className="px-4 mt-4 space-y-4">
-        {/* Filter chips */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {filters.map(f => (
             <button key={f} onClick={() => setActiveFilter(f)}
@@ -57,7 +67,6 @@ const TransactionHistory = () => {
           ))}
         </div>
 
-        {/* Summary */}
         <div className="glass-card rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Filter size={14} className="text-muted-foreground" />
@@ -65,7 +74,6 @@ const TransactionHistory = () => {
           </div>
         </div>
 
-        {/* Transaction list */}
         {userTx.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-sm text-muted-foreground">No transactions found</p>

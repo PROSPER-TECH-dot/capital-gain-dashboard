@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
@@ -31,6 +31,10 @@ const AdminDashboard = () => {
   const yesterdayUsers = allProfiles.filter(u => new Date(u.created_at).toDateString() === yesterdayDate).length;
   const totalDeposits = transactions.filter(t => t.type === 'recharge' && t.status === 'completed').reduce((s, t) => s + Number(t.amount), 0);
   const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal' && t.status === 'completed').reduce((s, t) => s + Number(t.amount), 0);
+  
+  // Cumulative income = sum of all users' earnings (checkin, earning, referral, gift - NOT deposits)
+  const totalCumulativeIncome = allProfiles.reduce((s, p) => s + Number(p.cumulative_income), 0);
+  
   const formatTotal = (amount: number) => amount.toLocaleString();
 
   const handleUpdateBalance = async (userId: string, field: string, value: number) => {
@@ -40,7 +44,6 @@ const AdminDashboard = () => {
   };
 
   const handleResetPassword = async (userId: string) => {
-    // Admin can reset via updating password directly through admin API - for now show notification
     alert('Password reset functionality requires a backend edge function.');
   };
 
@@ -91,8 +94,9 @@ const AdminDashboard = () => {
             { label: 'Total Users', value: allProfiles.length },
             { label: "Today's Users", value: todayUsers },
             { label: "Yesterday's", value: yesterdayUsers },
-            { label: 'Total Deposits', value: formatTotal(totalDeposits) },
-            { label: 'Total Withdrawals', value: formatTotal(totalWithdrawals) },
+            { label: 'Approved Deposits', value: formatTotal(totalDeposits) },
+            { label: 'Approved Withdrawals', value: formatTotal(totalWithdrawals) },
+            { label: 'Cumulative Income', value: formatTotal(totalCumulativeIncome) },
             { label: 'Gift Codes', value: giftCodes.length },
           ].map(({ label, value }) => (
             <div key={label} className="glass-card rounded-xl p-3">

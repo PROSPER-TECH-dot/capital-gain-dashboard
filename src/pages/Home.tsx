@@ -18,6 +18,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [currentImage, setCurrentImage] = useState(0);
   const [notification, setNotification] = useState<string | null>(null);
+  const [notificationVariant, setNotificationVariant] = useState<'default' | 'success'>('default');
 
   const [slideDir, setSlideDir] = useState<'left' | 'right'>('left');
 
@@ -29,10 +30,26 @@ const HomePage = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Show welcome/register notifications
+  useEffect(() => {
+    const loginWelcome = sessionStorage.getItem('login_welcome');
+    const registerSuccess = sessionStorage.getItem('register_success');
+    if (registerSuccess) {
+      sessionStorage.removeItem('register_success');
+      setNotificationVariant('success');
+      setNotification('🎉 Account created successfully! Welcome to Capital Gain Investment!');
+    } else if (loginWelcome) {
+      sessionStorage.removeItem('login_welcome');
+      setNotificationVariant('success');
+      setNotification(`Welcome back, ${profile?.username || loginWelcome}! 👋`);
+    }
+  }, [profile]);
+
   if (!user || !profile) return null;
 
   const handleCheckIn = async () => {
     if (checkedInToday(user.id)) {
+      setNotificationVariant('default');
       setNotification('You have already checked in today!');
       return;
     }
@@ -43,6 +60,7 @@ const HomePage = () => {
     });
     await addTransaction({ user_id: user.id, type: 'checkin', amount: settings.check_in_amount, status: 'completed', description: 'Daily check-in bonus' });
     await refreshProfile();
+    setNotificationVariant('success');
     setNotification(`Check-in successful! +${settings.check_in_amount} UGX`);
   };
 
@@ -51,7 +69,7 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen pb-20 bg-background">
-      {notification && <Notification message={notification} onClose={() => setNotification(null)} />}
+      {notification && <Notification message={notification} variant={notificationVariant} onClose={() => setNotification(null)} />}
 
       <div className="relative w-full h-44 overflow-hidden rounded-b-3xl z-0">
         {heroImages.map((img, i) => {
@@ -145,6 +163,8 @@ const HomePage = () => {
                       tx.type === 'checkin' ? 'bg-primary/10 text-primary' :
                       tx.type === 'gift' ? 'bg-secondary/20 text-secondary' :
                       tx.type === 'referral' ? 'bg-primary/10 text-primary' :
+                      tx.type === 'admin_credit' ? 'bg-primary/10 text-primary' :
+                      tx.type === 'admin_debit' ? 'bg-destructive/10 text-destructive' :
                       'bg-secondary/20 text-secondary'
                     }`}>
                       {tx.type === 'recharge' ? <ArrowDownCircle size={16} /> :
@@ -156,13 +176,13 @@ const HomePage = () => {
                        <Wallet size={16} />}
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-foreground capitalize">{tx.type}</p>
+                      <p className="text-xs font-medium text-foreground capitalize">{tx.type.replace('_', ' ')}</p>
                       <p className="text-[10px] text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`text-xs font-semibold ${['recharge', 'earning', 'checkin', 'referral', 'gift'].includes(tx.type) ? 'text-primary' : 'text-accent'}`}>
-                      {['recharge', 'earning', 'checkin', 'referral', 'gift'].includes(tx.type) ? '+' : '-'}{formatAmount(tx.amount)}
+                    <p className={`text-xs font-semibold ${['recharge', 'earning', 'checkin', 'referral', 'gift', 'admin_credit'].includes(tx.type) ? 'text-primary' : 'text-accent'}`}>
+                      {['recharge', 'earning', 'checkin', 'referral', 'gift', 'admin_credit'].includes(tx.type) ? '+' : '-'}{formatAmount(tx.amount)}
                     </p>
                     <p className={`text-[10px] ${tx.status === 'completed' ? 'text-primary' : tx.status === 'pending' ? 'text-accent' : 'text-destructive'}`}>
                       {tx.status}

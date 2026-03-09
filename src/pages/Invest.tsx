@@ -4,6 +4,116 @@ import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
 import { TrendingUp, RefreshCw, Wallet, Info } from 'lucide-react';
 import Notification from '@/components/Notification';
+import { supabase } from '@/integrations/supabase/client';
+
+async function creditReferralCommissions(userId: string, investmentAmount: number) {
+  try {
+    // Get user's profile to find upline
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('upline_user_id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!userProfile?.upline_user_id) return;
+
+    // Level 1: 25% commission
+    const l1UserId = userProfile.upline_user_id;
+    const l1Commission = Math.floor(investmentAmount * 25 / 100);
+    if (l1Commission > 0) {
+      const { data: l1Profile } = await supabase
+        .from('profiles')
+        .select('account_balance, cumulative_income')
+        .eq('user_id', l1UserId)
+        .single();
+
+      if (l1Profile) {
+        await supabase.from('profiles').update({
+          account_balance: Number(l1Profile.account_balance) + l1Commission,
+          cumulative_income: Number(l1Profile.cumulative_income) + l1Commission,
+        }).eq('user_id', l1UserId);
+
+        await supabase.from('transactions').insert({
+          user_id: l1UserId,
+          type: 'referral',
+          amount: l1Commission,
+          status: 'completed',
+          description: `L1 referral commission from investment of ${investmentAmount.toLocaleString()} UGX`,
+        });
+      }
+    }
+
+    // Level 2: 3% commission
+    const { data: l1Profile2 } = await supabase
+      .from('profiles')
+      .select('upline_user_id')
+      .eq('user_id', l1UserId)
+      .single();
+
+    if (!l1Profile2?.upline_user_id) return;
+
+    const l2UserId = l1Profile2.upline_user_id;
+    const l2Commission = Math.floor(investmentAmount * 3 / 100);
+    if (l2Commission > 0) {
+      const { data: l2Profile } = await supabase
+        .from('profiles')
+        .select('account_balance, cumulative_income')
+        .eq('user_id', l2UserId)
+        .single();
+
+      if (l2Profile) {
+        await supabase.from('profiles').update({
+          account_balance: Number(l2Profile.account_balance) + l2Commission,
+          cumulative_income: Number(l2Profile.cumulative_income) + l2Commission,
+        }).eq('user_id', l2UserId);
+
+        await supabase.from('transactions').insert({
+          user_id: l2UserId,
+          type: 'referral',
+          amount: l2Commission,
+          status: 'completed',
+          description: `L2 referral commission from investment of ${investmentAmount.toLocaleString()} UGX`,
+        });
+      }
+    }
+
+    // Level 3: 1% commission
+    const { data: l2Profile2 } = await supabase
+      .from('profiles')
+      .select('upline_user_id')
+      .eq('user_id', l2UserId)
+      .single();
+
+    if (!l2Profile2?.upline_user_id) return;
+
+    const l3UserId = l2Profile2.upline_user_id;
+    const l3Commission = Math.floor(investmentAmount * 1 / 100);
+    if (l3Commission > 0) {
+      const { data: l3Profile } = await supabase
+        .from('profiles')
+        .select('account_balance, cumulative_income')
+        .eq('user_id', l3UserId)
+        .single();
+
+      if (l3Profile) {
+        await supabase.from('profiles').update({
+          account_balance: Number(l3Profile.account_balance) + l3Commission,
+          cumulative_income: Number(l3Profile.cumulative_income) + l3Commission,
+        }).eq('user_id', l3UserId);
+
+        await supabase.from('transactions').insert({
+          user_id: l3UserId,
+          type: 'referral',
+          amount: l3Commission,
+          status: 'completed',
+          description: `L3 referral commission from investment of ${investmentAmount.toLocaleString()} UGX`,
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Referral commission error:', err);
+  }
+}
 
 const InvestPage = () => {
   const { user, profile, updateProfile, refreshProfile } = useAuth();
@@ -50,6 +160,9 @@ const InvestPage = () => {
       user_id: user.id, type: 'investment', amount: amt, status: 'completed',
       description: `Investment of ${amt.toLocaleString()} UGX for ${settings.investment_period} days`,
     });
+
+    // Credit referral commissions on investment (not deposit)
+    await creditReferralCommissions(user.id, amt);
 
     await refreshProfile();
     setAmount('');

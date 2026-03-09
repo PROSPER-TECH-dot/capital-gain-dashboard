@@ -29,6 +29,7 @@ const AdminSettings = () => {
     { label: 'Support 1 Number', key: 'support1', type: 'text' },
     { label: 'Support 2 Number', key: 'support2', type: 'text' },
     { label: 'Minimum Withdrawal (UGX)', key: 'min_withdrawal', type: 'number' },
+    { label: 'Withdrawal Fee (%)', key: 'withdrawal_fee', type: 'number' },
     { label: 'Minimum Deposit (UGX)', key: 'min_deposit', type: 'number' },
     { label: 'Daily Earnings (%)', key: 'daily_earnings', type: 'number' },
     { label: 'Minimum Investment (UGX)', key: 'min_investment', type: 'number' },
@@ -49,7 +50,7 @@ const AdminSettings = () => {
     } else if (key === 'support2') {
       setForm(f => ({ ...f, support_numbers: [supportNumbers[0] || { name: 'Support 1', number: '' }, { name: 'Support 2', number: value }] }));
     } else {
-      const numFields = ['min_withdrawal', 'min_deposit', 'daily_earnings', 'min_investment', 'investment_period', 'check_in_amount'];
+      const numFields = ['min_withdrawal', 'min_deposit', 'daily_earnings', 'min_investment', 'investment_period', 'check_in_amount', 'withdrawal_fee'];
       setForm(f => ({ ...f, [key]: numFields.includes(key) ? parseInt(value) || 0 : value }));
     }
   };

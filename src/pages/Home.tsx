@@ -69,7 +69,10 @@ const HomePage = () => {
         })}
         <div className="absolute inset-0 gradient-hero opacity-60" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="text-2xl font-bold font-heading text-primary-foreground drop-shadow-lg">{settings.website_name}</h1>
+          <h1 className="text-2xl font-bold font-heading text-primary-foreground drop-shadow-lg flex items-center gap-2 justify-center">
+            <span className="text-3xl">🪙</span>
+            {settings.website_name}
+          </h1>
         </div>
       </div>
 

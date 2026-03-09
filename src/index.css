@@ -147,7 +147,7 @@
   }
 
   .ticker-scroll {
-    animation: tickerScroll 60s linear infinite;
+    animation: tickerScroll 120s linear infinite;
     width: max-content;
     will-change: transform;
   }

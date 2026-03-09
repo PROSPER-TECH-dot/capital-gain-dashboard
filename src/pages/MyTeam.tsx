@@ -101,6 +101,8 @@ const MyTeamPage = () => {
       .reduce((sum, t) => sum + Math.floor(Number(t.amount) * percentage / 100), 0);
   };
 
+  if (!user || !profile) return null;
+
   const levels = [
     { level: 1, users: l1, earning: 25 },
     { level: 2, users: l2, earning: 3 },

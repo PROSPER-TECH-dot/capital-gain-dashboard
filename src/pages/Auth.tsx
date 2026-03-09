@@ -53,9 +53,8 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center p-4 gradient-hero">
       <div className="w-full max-w-md animate-scale-in">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold font-heading text-primary-foreground flex items-center gap-2 justify-center">
-            <span className="text-4xl">🪙</span>
-            {settings.website_name}
+          <h1 className="text-3xl font-bold font-heading text-primary-foreground flex items-baseline justify-center gap-0">
+            <span className="text-4xl leading-none -mr-1">🪙</span>{settings.website_name}
           </h1>
           <p className="text-primary-foreground/70 text-sm mt-1">Your trusted investment partner</p>
         </div>

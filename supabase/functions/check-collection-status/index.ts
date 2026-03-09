@@ -14,6 +14,7 @@ const JULYPAY_BASE = 'https://app.julypay.net/api/v1'
 const SUCCESS_STATUSES = new Set(['completed', 'successful', 'success'])
 const FAILED_STATUSES = new Set(['failed', 'cancelled', 'canceled', 'rejected', 'declined', 'expired', 'timeout', 'failed_api_error', 'failed_api_unreachable', 'failed_unknown'])
 const PROCESSING_STATUSES = new Set(['processing', 'pending', 'queued', 'initiated'])
+const MAX_PENDING_MS = 5000
 
 const normalizeStatus = (value: unknown) =>
   String(value ?? '')
@@ -63,7 +64,7 @@ Deno.serve(async (req) => {
 
     const { data: txRows, error: txError } = await adminClient
       .from('transactions')
-      .select('id, amount, status, created_at')
+      .select('id, amount, status, description, created_at')
       .eq('user_id', userId)
       .eq('type', 'recharge')
       .like('description', `%Ref: ${transaction_id}%`)
@@ -85,14 +86,23 @@ Deno.serve(async (req) => {
       return reply({ status: 'failed', success: false, message: 'Payment was not confirmed.' })
     }
 
-    const failPendingTransaction = async (message: string) => {
+    const failPendingTransaction = async (message: string, reason = 'Auto-rejected: payment not confirmed by provider') => {
+      const nextDescription = pendingTx.description?.includes(reason)
+        ? pendingTx.description
+        : `${pendingTx.description} (${reason})`
+
       await adminClient
         .from('transactions')
-        .update({ status: 'failed' })
+        .update({ status: 'failed', description: nextDescription })
         .eq('id', pendingTx.id)
         .eq('status', 'pending')
 
       return reply({ status: 'failed', success: false, message })
+    }
+
+    const txAgeMs = Date.now() - new Date(pendingTx.created_at).getTime()
+    if (txAgeMs > MAX_PENDING_MS) {
+      return await failPendingTransaction('Payment was not confirmed in time and was automatically rejected.')
     }
 
     let providerStatus = 'processing'
@@ -161,12 +171,11 @@ Deno.serve(async (req) => {
     }
 
     if (FAILED_STATUSES.has(providerStatus)) {
-      return await failPendingTransaction(providerMessage || 'Payment request failed or was cancelled.')
+      return await failPendingTransaction(providerMessage || 'Payment request failed or was cancelled.', 'Auto-rejected: payment cancelled or failed')
     }
 
     if (PROCESSING_STATUSES.has(providerStatus)) {
-      const txAgeMs = Date.now() - new Date(pendingTx.created_at).getTime()
-      if (txAgeMs > 120000) {
+      if (txAgeMs > MAX_PENDING_MS) {
         return await failPendingTransaction('Payment was not confirmed in time and was automatically rejected.')
       }
 

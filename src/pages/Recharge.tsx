@@ -18,7 +18,7 @@ const RechargePage = () => {
   const [notification, setNotification] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPolling = () => {
     if (pollingRef.current) {
@@ -29,7 +29,7 @@ const RechargePage = () => {
 
   const pollStatus = (transactionId: string) => {
     let attempts = 0;
-    const maxAttempts = 30;
+    const maxAttempts = 8;
 
     pollingRef.current = setInterval(async () => {
       attempts++;
@@ -69,7 +69,7 @@ const RechargePage = () => {
       } catch (e) {
         // Keep polling on network errors
       }
-    }, 5000);
+    }, 1000);
   };
 
   useEffect(() => {

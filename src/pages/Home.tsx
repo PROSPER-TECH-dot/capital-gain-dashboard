@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { Wallet, ArrowDownCircle, ArrowUpCircle, CalendarCheck, Clock } from 'lucide-react';
+import { Wallet, ArrowDownCircle, ArrowUpCircle, CalendarCheck, Clock, TrendingUp, Gift, Users } from 'lucide-react';
 import LiveTicker from '@/components/LiveTicker';
 import Notification from '@/components/Notification';
 

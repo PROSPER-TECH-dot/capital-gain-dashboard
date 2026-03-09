@@ -147,8 +147,10 @@
   }
 
   .ticker-scroll {
-    animation: tickerScroll 10s linear infinite;
+    animation: tickerScroll 25s linear infinite;
     width: max-content;
+    will-change: transform;
+  }
     will-change: transform;
   }
 }

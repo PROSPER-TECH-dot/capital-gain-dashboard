@@ -37,7 +37,10 @@ const HomePage = () => {
       return;
     }
     await checkIn(user.id);
-    await updateProfile(user.id, { account_balance: profile.account_balance + settings.check_in_amount });
+    await updateProfile(user.id, { 
+      account_balance: profile.account_balance + settings.check_in_amount,
+      cumulative_income: profile.cumulative_income + settings.check_in_amount,
+    });
     await addTransaction({ user_id: user.id, type: 'checkin', amount: settings.check_in_amount, status: 'completed', description: 'Daily check-in bonus' });
     await refreshProfile();
     setNotification(`Check-in successful! +${settings.check_in_amount} UGX`);

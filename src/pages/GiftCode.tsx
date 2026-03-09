@@ -18,7 +18,10 @@ const GiftCodePage = () => {
     if (!code.trim()) { setNotification('Please enter a gift code'); return; }
     const amount = await redeemGiftCode(code.trim(), user.id);
     if (amount === null) { setNotification('Invalid or already used gift code'); return; }
-    await updateProfile(user.id, { account_balance: profile.account_balance + amount });
+    await updateProfile(user.id, { 
+      account_balance: profile.account_balance + amount,
+      cumulative_income: profile.cumulative_income + amount,
+    });
     await addTransaction({ user_id: user.id, type: 'gift', amount, status: 'completed', description: `Gift code redeemed: ${code}` });
     await refreshProfile();
     setCode('');

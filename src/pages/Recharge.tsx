@@ -1,21 +1,76 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
 import { ArrowLeft, ArrowDownCircle, Phone, Info } from 'lucide-react';
 import Notification from '@/components/Notification';
+import { supabase } from '@/integrations/supabase/client';
 import airtelLogo from '@/assets/airtel-logo.png';
 import mtnLogo from '@/assets/mtn-logo.png';
 
 const RechargePage = () => {
-  const { user, profile, updateProfile, refreshProfile } = useAuth();
-  const { settings, addTransaction } = useApp();
+  const { user, profile, refreshProfile } = useAuth();
+  const { settings, refreshTransactions } = useApp();
   const navigate = useNavigate();
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
   const [network, setNetwork] = useState<'airtel' | 'mtn' | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  const stopPolling = () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  };
+
+  const pollStatus = (transactionId: string) => {
+    let attempts = 0;
+    const maxAttempts = 30; // 5 minutes max (10s intervals)
+
+    pollingRef.current = setInterval(async () => {
+      attempts++;
+      if (attempts >= maxAttempts) {
+        stopPolling();
+        setProcessing(false);
+        setStatusMessage('');
+        setNotification('Payment timed out. Please try again.');
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.functions.invoke('check-collection-status', {
+          body: { transaction_id: transactionId },
+        });
+
+        if (error) return;
+
+        if (data?.status === 'completed') {
+          stopPolling();
+          await refreshProfile();
+          await refreshTransactions();
+          setProcessing(false);
+          setStatusMessage('');
+          setNotification(`Recharged ${parseInt(amount).toLocaleString()} UGX successfully!`);
+          setTimeout(() => navigate('/home'), 1500);
+        } else if (data?.status === 'failed') {
+          stopPolling();
+          setProcessing(false);
+          setStatusMessage('');
+          setNotification(data?.message || 'Payment failed or cancelled.');
+        }
+      } catch (e) {
+        // Keep polling on network errors
+      }
+    }, 10000);
+  };
+
+  useEffect(() => {
+    return () => stopPolling();
+  }, []);
 
   if (!user || !profile) return null;
 
@@ -32,17 +87,27 @@ const RechargePage = () => {
     }
 
     setProcessing(true);
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    setStatusMessage('Sending payment request to your phone...');
 
-    await updateProfile(user.id, {
-      recharge_balance: profile.recharge_balance + amt,
-      account_balance: profile.account_balance + amt,
-    });
-    await addTransaction({ user_id: user.id, type: 'recharge', amount: amt, status: 'completed', description: `Recharge via ${network.toUpperCase()} - ${phone}` });
-    await refreshProfile();
-    setProcessing(false);
-    setNotification(`Recharged ${amt.toLocaleString()} UGX successfully!`);
-    setTimeout(() => navigate('/home'), 1500);
+    try {
+      const { data, error } = await supabase.functions.invoke('collect-payment', {
+        body: { phone, amount: amt, network },
+      });
+
+      if (error || !data?.success) {
+        setProcessing(false);
+        setStatusMessage('');
+        setNotification(data?.error || error?.message || 'Payment request failed');
+        return;
+      }
+
+      setStatusMessage('STK push sent! Enter your PIN on your phone to confirm...');
+      pollStatus(data.transaction_id);
+    } catch (e: any) {
+      setProcessing(false);
+      setStatusMessage('');
+      setNotification(e.message || 'Something went wrong');
+    }
   };
 
   return (
@@ -106,10 +171,23 @@ const RechargePage = () => {
             </div>
           </div>
 
+          {statusMessage && (
+            <div className="glass rounded-xl p-3 text-center">
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs font-medium text-primary">{statusMessage}</p>
+              </div>
+            </div>
+          )}
+
           <button onClick={handleRecharge} disabled={processing}
             className="w-full btn-accent py-3 text-sm disabled:opacity-50">
-            {processing ? 'Processing STK Push...' : 'Recharge Now'}
+            {processing ? 'Processing...' : 'Recharge Now'}
           </button>
+
+          <p className="text-[10px] text-center text-muted-foreground">
+            Powered by Capital Gain Pay™ • Secure & Instant
+          </p>
         </div>
 
         {/* Deposit Instructions */}

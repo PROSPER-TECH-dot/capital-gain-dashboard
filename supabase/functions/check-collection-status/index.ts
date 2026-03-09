@@ -86,10 +86,14 @@ Deno.serve(async (req) => {
       return reply({ status: 'failed', success: false, message: 'Payment was not confirmed.' })
     }
 
-    const failPendingTransaction = async (message: string) => {
+    const failPendingTransaction = async (message: string, reason = 'Auto-rejected: payment not confirmed by provider') => {
+      const nextDescription = pendingTx.description?.includes(reason)
+        ? pendingTx.description
+        : `${pendingTx.description} (${reason})`
+
       await adminClient
         .from('transactions')
-        .update({ status: 'failed' })
+        .update({ status: 'failed', description: nextDescription })
         .eq('id', pendingTx.id)
         .eq('status', 'pending')
 

@@ -205,6 +205,7 @@ export type Database = {
           support_numbers: Json
           website_name: string
           whatsapp_group: string
+          withdrawal_fee: number
         }
         Insert: {
           check_in_amount?: number
@@ -218,6 +219,7 @@ export type Database = {
           support_numbers?: Json
           website_name?: string
           whatsapp_group?: string
+          withdrawal_fee?: number
         }
         Update: {
           check_in_amount?: number
@@ -231,6 +233,7 @@ export type Database = {
           support_numbers?: Json
           website_name?: string
           whatsapp_group?: string
+          withdrawal_fee?: number
         }
         Relationships: []
       }

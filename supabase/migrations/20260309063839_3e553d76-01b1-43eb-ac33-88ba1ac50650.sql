@@ -1,0 +1,1 @@
+ALTER TABLE public.settings ADD COLUMN withdrawal_fee numeric NOT NULL DEFAULT 15;

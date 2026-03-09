@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { ArrowLeft, Gift } from 'lucide-react';
+import { ArrowLeft, Gift, Info } from 'lucide-react';
 import Notification from '@/components/Notification';
 
 const GiftCodePage = () => {

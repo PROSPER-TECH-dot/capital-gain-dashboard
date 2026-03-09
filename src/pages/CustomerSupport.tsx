@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Phone, ExternalLink } from 'lucide-react';
+import { ArrowLeft, MessageCircle, ExternalLink } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
 const CustomerSupport = () => {

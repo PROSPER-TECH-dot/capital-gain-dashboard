@@ -32,7 +32,7 @@ const GiftCodePage = () => {
         <button onClick={() => navigate(-1)} className="text-primary-foreground"><ArrowLeft size={22} /></button>
         <h1 className="text-lg font-bold font-heading text-primary-foreground">Gift Code</h1>
       </div>
-      <div className="px-4 -mt-4">
+      <div className="px-4 -mt-4 space-y-4">
         <div className="glass-card rounded-2xl p-5 space-y-4 animate-fade-in">
           <div className="flex items-center gap-2">
             <Gift size={20} className="text-primary" />
@@ -43,6 +43,35 @@ const GiftCodePage = () => {
             className="w-full px-4 py-3 rounded-xl glass text-foreground text-sm font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/50 uppercase"
             placeholder="Enter code" />
           <button onClick={handleRedeem} className="w-full btn-accent py-3 text-sm">Redeem</button>
+        </div>
+
+        {/* Instructions */}
+        <div className="glass-card rounded-2xl p-5 animate-fade-in">
+          <div className="flex items-center gap-2 mb-3">
+            <Info size={18} className="text-primary" />
+            <h2 className="text-sm font-semibold font-heading text-foreground">How to Redeem Gift Codes</h2>
+          </div>
+          <div className="space-y-3 text-xs text-muted-foreground">
+            <div className="flex gap-3">
+              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
+              <p><span className="text-foreground font-medium">Get a gift code</span> — Gift codes are shared by admins during promotions, giveaways, or special events on WhatsApp group.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
+              <p><span className="text-foreground font-medium">Enter the code</span> — Type or paste the gift code exactly as received in the input field above.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
+              <p><span className="text-foreground font-medium">Tap "Redeem"</span> — Click the redeem button to claim your bonus. The amount will be added to your account balance.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">4</span>
+              <p><span className="text-foreground font-medium">Receive bonus</span> — Once redeemed, the bonus amount (random between min and max) is instantly credited to your account.</p>
+            </div>
+          </div>
+          <div className="mt-4 p-3 rounded-xl glass">
+            <p className="text-xs text-muted-foreground"><span className="text-foreground font-medium">Note:</span> Each gift code can only be redeemed once per user. Codes may have limited redemptions available.</p>
+          </div>
         </div>
       </div>
     </div>

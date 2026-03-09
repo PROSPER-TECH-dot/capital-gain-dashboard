@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Eye, EyeOff, UserPlus, LogIn } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
 const Auth = () => {
+  const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -22,6 +23,15 @@ const Auth = () => {
   const [regPass, setRegPass] = useState('');
   const [regConfirm, setRegConfirm] = useState('');
   const [regReferral, setRegReferral] = useState('');
+
+  // Auto-fill referral code from URL params
+  useEffect(() => {
+    const ref = searchParams.get('ref') || searchParams.get('referral');
+    if (ref) {
+      setRegReferral(ref);
+      setIsLogin(false); // Switch to register tab
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,7 +154,7 @@ const Auth = () => {
               <div>
                 <label className="text-xs font-medium text-foreground/80 mb-1 block">Referral Code <span className="text-muted-foreground">(optional)</span></label>
                 <input type="text" value={regReferral} onChange={e => setRegReferral(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl glass-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className={`w-full px-4 py-3 rounded-xl glass-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 ${regReferral ? 'ring-2 ring-primary/50 bg-primary/5' : ''}`}
                   placeholder="Enter referral code" />
               </div>
               <button type="submit" disabled={loading} className="w-full btn-accent py-3 text-sm disabled:opacity-50">

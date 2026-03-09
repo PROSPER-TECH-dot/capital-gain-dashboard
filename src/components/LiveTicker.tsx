@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 const demoNames = [
@@ -9,7 +9,12 @@ const demoNames = [
   'Henry***', 'Carol***', 'Daniel***', 'Irene***', 'Joseph***', 'Naomi***', 'Charles***', 'Winnie***',
   'Philip***', 'Harriet***', 'Simon***', 'Aisha***', 'Steven***', 'Prossy***', 'Tony***', 'Annet***',
   'Derrick***', 'Gloria***', 'Ivan***', 'Phiona***', 'Eric***', 'Brenda***', 'Trevor***', 'Juliet***',
-  'Godfrey***', 'Patience***', 'Kenneth***', 'Martha***',
+  'Godfrey***', 'Patience***', 'Kenneth***', 'Martha***', 'Andrew***', 'Sylvia***', 'Victor***', 'Sharon***',
+  'Paul***', 'Olivia***', 'Alex***', 'Christine***', 'Mark***', 'Diana***', 'Richard***', 'Susan***',
+  'Emmanuel***', 'Catherine***', 'Oscar***', 'Rachael***', 'Joel***', 'Phoebe***', 'Timothy***', 'Deborah***',
+  'Felix***', 'Alice***', 'Nelson***', 'Margaret***', 'Arthur***', 'Florence***', 'Vincent***', 'Angela***',
+  'Douglas***', 'Rita***', 'Benard***', 'Josephine***', 'Raymond***', 'Gladys***', 'Herbert***', 'Cissy***',
+  'Edward***', 'Linda***', 'Julius***', 'Anita***',
 ];
 
 const demoAmounts = [
@@ -34,10 +39,9 @@ const generateDemoItems = (count: number): TickerItem[] => {
 };
 
 const LiveTicker = () => {
-  const [tickerItems, setTickerItems] = useState<TickerItem[]>(() => generateDemoItems(30));
+  const [tickerItems, setTickerItems] = useState<TickerItem[]>(() => generateDemoItems(50));
 
   useEffect(() => {
-    // Fetch real recent transactions
     const fetchRealTransactions = async () => {
       const { data } = await supabase
         .from('transactions')
@@ -45,10 +49,9 @@ const LiveTicker = () => {
         .in('type', ['recharge', 'withdrawal'])
         .eq('status', 'completed')
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(30);
 
       if (data && data.length > 0) {
-        // Get usernames for these users
         const userIds = [...new Set(data.map(t => t.user_id))];
         const { data: profiles } = await supabase
           .from('profiles')
@@ -67,10 +70,8 @@ const LiveTicker = () => {
           };
         });
 
-        // Mix real with demo to fill ticker
-        const demoFiller = generateDemoItems(Math.max(20, 30 - realItems.length));
+        const demoFiller = generateDemoItems(Math.max(30, 50 - realItems.length));
         const mixed = [...realItems, ...demoFiller];
-        // Shuffle
         for (let i = mixed.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [mixed[i], mixed[j]] = [mixed[j], mixed[i]];
@@ -80,23 +81,24 @@ const LiveTicker = () => {
     };
 
     fetchRealTransactions();
-
-    // Refresh every 30 seconds
     const interval = setInterval(fetchRealTransactions, 30000);
     return () => clearInterval(interval);
   }, []);
 
+  // Duplicate items enough times for seamless infinite scroll
+  const displayItems = [...tickerItems, ...tickerItems, ...tickerItems];
+
   return (
     <div className="w-full overflow-hidden glass-card rounded-xl py-2">
       <div className="flex ticker-scroll whitespace-nowrap">
-        {[...tickerItems, ...tickerItems].map((item, i) => (
-          <span key={i} className="inline-flex items-center gap-1 px-4 text-xs font-medium">
+        {displayItems.map((item, i) => (
+          <span key={i} className="inline-flex items-center gap-1 px-3 text-xs font-medium shrink-0">
             <span className="text-foreground">{item.user}</span>
             <span className={item.action === 'recharged' ? 'text-primary' : 'text-accent'}>
               {item.action}
             </span>
             <span className="font-semibold text-foreground">{item.amount}</span>
-            <span className="text-muted-foreground mx-2">•</span>
+            <span className="text-muted-foreground mx-1">•</span>
           </span>
         ))}
       </div>

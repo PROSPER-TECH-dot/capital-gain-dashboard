@@ -29,7 +29,7 @@ const RechargePage = () => {
 
   const pollStatus = (transactionId: string) => {
     let attempts = 0;
-    const maxAttempts = 30; // 5 minutes max (10s intervals)
+    const maxAttempts = 30;
 
     pollingRef.current = setInterval(async () => {
       attempts++;
@@ -37,7 +37,9 @@ const RechargePage = () => {
         stopPolling();
         setProcessing(false);
         setStatusMessage('');
-        setNotification('Payment timed out. Please try again.');
+        setNotification('Payment timed out. Please check your transaction history.');
+        await refreshTransactions();
+        setTimeout(() => navigate('/home'), 2000);
         return;
       }
 
@@ -58,9 +60,11 @@ const RechargePage = () => {
           setTimeout(() => navigate('/home'), 1500);
         } else if (data?.status === 'failed') {
           stopPolling();
+          await refreshTransactions();
           setProcessing(false);
           setStatusMessage('');
-          setNotification(data?.message || 'Payment failed or cancelled.');
+          setNotification(data?.message || 'Payment failed or was cancelled.');
+          setTimeout(() => navigate('/home'), 2000);
         }
       } catch (e) {
         // Keep polling on network errors
@@ -102,6 +106,7 @@ const RechargePage = () => {
       }
 
       setStatusMessage('STK push sent! Enter your PIN on your phone to confirm...');
+      setNotification('Payment request sent to your phone. Please enter your PIN.');
       pollStatus(data.transaction_id);
     } catch (e: any) {
       setProcessing(false);
@@ -135,7 +140,6 @@ const RechargePage = () => {
             ))}
           </div>
 
-          {/* Phone Number */}
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Phone size={16} className="text-primary" />
@@ -146,7 +150,6 @@ const RechargePage = () => {
               placeholder="Enter your mobile money number e.g. 0771234567" />
           </div>
 
-          {/* Network Selection */}
           <div>
             <label className="text-xs font-semibold text-foreground mb-3 block">Select Network</label>
             <div className="grid grid-cols-2 gap-4">
@@ -190,7 +193,6 @@ const RechargePage = () => {
           </p>
         </div>
 
-        {/* Deposit Instructions */}
         <div className="glass-card rounded-2xl p-5 animate-fade-in">
           <div className="flex items-center gap-2 mb-3">
             <Info size={18} className="text-primary" />
@@ -199,7 +201,7 @@ const RechargePage = () => {
           <div className="space-y-3 text-xs text-muted-foreground">
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-              <p><span className="text-foreground font-medium">Enter the amount</span> — Enter the amount you wish to deposit. Minimum deposit is {settings.min_deposit.toLocaleString()} UGX.</p>
+              <p><span className="text-foreground font-medium">Enter the amount</span> — Minimum deposit is {settings.min_deposit.toLocaleString()} UGX.</p>
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
@@ -207,15 +209,15 @@ const RechargePage = () => {
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-              <p><span className="text-foreground font-medium">Select your network</span> — Choose either Airtel Money or MTN MoMo depending on your provider.</p>
+              <p><span className="text-foreground font-medium">Select your network</span> — Choose Airtel Money or MTN MoMo.</p>
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">4</span>
-              <p><span className="text-foreground font-medium">Tap "Recharge Now"</span> — An STK push will be sent to your phone. Enter your mobile money PIN to confirm.</p>
+              <p><span className="text-foreground font-medium">Tap "Recharge Now"</span> — An STK push will be sent to your phone. Enter your PIN to confirm.</p>
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">5</span>
-              <p><span className="text-foreground font-medium">Wait for confirmation</span> — Once payment is confirmed, your balance will be updated automatically and you'll be redirected to the home page.</p>
+              <p><span className="text-foreground font-medium">Wait for confirmation</span> — Your balance updates automatically and you'll be redirected home.</p>
             </div>
           </div>
         </div>

@@ -24,13 +24,12 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     )
 
-    const token = authHeader.replace('Bearer ', '')
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token)
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
     }
 
-    const userId = claimsData.claims.sub as string
+    const userId = user.id
     const { transaction_id } = await req.json()
 
     if (!transaction_id) {
@@ -71,7 +70,6 @@ Deno.serve(async (req) => {
 
       if (txData) {
         const amount = Number(txData.amount)
-        // Get current profile
         const { data: profileData } = await adminClient.from('profiles')
           .select('account_balance, recharge_balance')
           .eq('user_id', userId)

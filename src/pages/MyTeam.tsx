@@ -1,32 +1,48 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useApp } from '@/context/AppContext';
+import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight, Copy, Check, Link2 } from 'lucide-react';
 import Notification from '@/components/Notification';
 
+interface ReferralTransaction {
+  amount: number;
+  description: string;
+}
+
 const MyTeamPage = () => {
   const { user, profile, profiles } = useAuth();
-  const { transactions } = useApp();
   const navigate = useNavigate();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [expandedLevel, setExpandedLevel] = useState<number | null>(null);
+  const [referralTxs, setReferralTxs] = useState<ReferralTransaction[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchReferralTxs = async () => {
+      const { data } = await supabase
+        .from('transactions')
+        .select('amount, description')
+        .eq('user_id', user.id)
+        .eq('type', 'referral')
+        .eq('status', 'completed');
+      if (data) setReferralTxs(data as ReferralTransaction[]);
+    };
+    fetchReferralTxs();
+  }, [user]);
 
   if (!user || !profile) return null;
 
-  // Build referral tree using profiles
+  // Build referral tree
   const l1 = profiles.filter(p => p.upline_user_id === user.id);
   const l2 = l1.flatMap(u => profiles.filter(p => p.upline_user_id === u.user_id));
   const l3 = l2.flatMap(u => profiles.filter(p => p.upline_user_id === u.user_id));
 
-  // Calculate actual referral earnings per user from referral transactions
-  const referralTxs = transactions.filter(t => t.type === 'referral' && t.status === 'completed' && t.user_id === user.id);
-  
   const getEarningsForUser = (subordinateUserId: string) => {
     return referralTxs
-      .filter(t => t.description.includes(subordinateUserId))
+      .filter(t => t.description && t.description.includes(subordinateUserId))
       .reduce((sum, t) => sum + Number(t.amount), 0);
   };
 
@@ -37,7 +53,6 @@ const MyTeamPage = () => {
   ];
 
   const totalEarnings = referralTxs.reduce((sum, t) => sum + Number(t.amount), 0);
-
   const referralLink = `${window.location.origin}?ref=${profile.referral_code}`;
 
   const copyToClipboard = (text: string, type: 'link' | 'code') => {

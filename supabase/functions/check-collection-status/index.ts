@@ -100,6 +100,11 @@ Deno.serve(async (req) => {
       return reply({ status: 'failed', success: false, message })
     }
 
+    const txAgeMs = Date.now() - new Date(pendingTx.created_at).getTime()
+    if (txAgeMs > MAX_PENDING_MS) {
+      return await failPendingTransaction('Payment was not confirmed in time and was automatically rejected.')
+    }
+
     let providerStatus = 'processing'
     let providerMessage = ''
 

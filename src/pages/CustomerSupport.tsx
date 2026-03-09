@@ -23,11 +23,11 @@ const CustomerSupport = () => {
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground">{s.name}</p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone size={12} /> {s.number}</p>
+              <p className="text-xs text-muted-foreground">Chat on WhatsApp</p>
             </div>
             <ExternalLink size={16} className="text-muted-foreground" />
           </a>
-        ))}
+        ))
 
         <a href={settings.whatsapp_group} target="_blank" rel="noopener noreferrer"
           className="glass-card rounded-2xl p-5 flex items-center gap-4 block">

@@ -25,10 +25,10 @@ const MyTeamPage = () => {
   const [referralTxs, setReferralTxs] = useState<ReferralTransaction[]>([]);
   const [investmentTxs, setInvestmentTxs] = useState<InvestmentTransaction[]>([]);
 
-  if (!user || !profile) return null;
+  const currentUserId = user?.id ?? '';
 
   // Build referral tree
-  const l1 = profiles.filter(p => p.upline_user_id === user.id);
+  const l1 = currentUserId ? profiles.filter(p => p.upline_user_id === currentUserId) : [];
   const l2 = l1.flatMap(u => profiles.filter(p => p.upline_user_id === u.user_id));
   const l3 = l2.flatMap(u => profiles.filter(p => p.upline_user_id === u.user_id));
 

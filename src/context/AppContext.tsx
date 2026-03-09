@@ -208,7 +208,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const checkedInToday = (userId: string) => todayCheckIns.has(userId);
 
   const checkIn = async (userId: string) => {
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const eatOffset = 3 * 60;
+    const eatDate = new Date(now.getTime() + eatOffset * 60000);
+    const today = eatDate.toISOString().split('T')[0];
     await supabase.from('check_ins').insert({ user_id: userId, check_in_date: today });
     setTodayCheckIns(prev => new Set([...prev, userId]));
   };

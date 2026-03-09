@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { Wallet, ArrowDownCircle, ArrowUpCircle, CalendarCheck, Clock } from 'lucide-react';
+import { Wallet, ArrowDownCircle, ArrowUpCircle, CalendarCheck, Clock, TrendingUp, Gift, Users } from 'lucide-react';
 import LiveTicker from '@/components/LiveTicker';
 import Notification from '@/components/Notification';
 
@@ -135,13 +135,22 @@ const HomePage = () => {
               {userTransactions.slice(0, 20).map(tx => (
                 <div key={tx.id} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
                   <div className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                       tx.type === 'recharge' ? 'bg-primary/10 text-primary' :
                       tx.type === 'withdrawal' ? 'bg-accent/10 text-accent' :
                       tx.type === 'earning' ? 'bg-primary/10 text-primary' :
+                      tx.type === 'checkin' ? 'bg-primary/10 text-primary' :
+                      tx.type === 'gift' ? 'bg-secondary/20 text-secondary' :
+                      tx.type === 'referral' ? 'bg-primary/10 text-primary' :
                       'bg-secondary/20 text-secondary'
                     }`}>
-                      {tx.type[0].toUpperCase()}
+                      {tx.type === 'recharge' ? <ArrowDownCircle size={16} /> :
+                       tx.type === 'withdrawal' ? <ArrowUpCircle size={16} /> :
+                       tx.type === 'earning' ? <TrendingUp size={16} /> :
+                       tx.type === 'checkin' ? <CalendarCheck size={16} /> :
+                       tx.type === 'gift' ? <Gift size={16} /> :
+                       tx.type === 'referral' ? <Users size={16} /> :
+                       <Wallet size={16} />}
                     </div>
                     <div>
                       <p className="text-xs font-medium text-foreground capitalize">{tx.type}</p>

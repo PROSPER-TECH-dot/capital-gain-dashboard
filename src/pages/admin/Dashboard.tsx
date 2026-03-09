@@ -31,7 +31,7 @@ const AdminDashboard = () => {
   const yesterdayUsers = allProfiles.filter(u => new Date(u.created_at).toDateString() === yesterdayDate).length;
   const totalDeposits = transactions.filter(t => t.type === 'recharge').reduce((s, t) => s + Number(t.amount), 0);
   const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal').reduce((s, t) => s + Number(t.amount), 0);
-  const formatTotal = (amount: number) => (amount === 0 ? '0' : amount < 1000 ? amount.toLocaleString() : `${(amount / 1000).toFixed(0)}K`);
+  const formatTotal = (amount: number) => amount.toLocaleString();
 
   const handleUpdateBalance = async (userId: string, field: string, value: number) => {
     await updateProfile(userId, { [field]: value } as any);

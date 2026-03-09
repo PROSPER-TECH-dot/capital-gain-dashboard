@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
     }
 
     if (FAILED_STATUSES.has(providerStatus)) {
-      return await failPendingTransaction(providerMessage || 'Payment request failed or was cancelled.')
+      return await failPendingTransaction(providerMessage || 'Payment request failed or was cancelled.', 'Auto-rejected: payment cancelled or failed')
     }
 
     if (PROCESSING_STATUSES.has(providerStatus)) {

@@ -5,12 +5,12 @@ import { useApp } from '@/context/AppContext';
 import { Wallet, ArrowDownCircle, ArrowUpCircle, CalendarCheck, Clock, TrendingUp, Gift, Users } from 'lucide-react';
 import LiveTicker from '@/components/LiveTicker';
 import Notification from '@/components/Notification';
+import logo1 from '@/assets/capital_gain_logo_1.png';
+import logo2 from '@/assets/capital_gain_logo_2.png';
+import logo3 from '@/assets/capital_gain_logo_3.png';
+import logo4 from '@/assets/capital_gain_logo_4.png';
 
-const heroImages = [
-  'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1553729459-uj8ax09dq67?w=800&h=300&fit=crop',
-];
+const heroImages = [logo1, logo2, logo3, logo4];
 
 const HomePage = () => {
   const { user, profile, updateProfile, refreshProfile } = useAuth();

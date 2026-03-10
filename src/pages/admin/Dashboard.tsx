@@ -55,6 +55,7 @@ const AdminDashboard = () => {
     { label: 'Users', icon: Users, path: '/admin/users' },
     { label: 'Transactions', icon: ArrowUpDown, path: '/admin/transactions' },
     { label: 'Gift Codes', icon: Gift, path: '/admin/gift-codes' },
+    { label: 'Referral Audit', icon: Link2, path: '/admin/referral-audit' },
     { label: 'Settings', icon: Settings, path: '/admin/settings' },
   ];
 

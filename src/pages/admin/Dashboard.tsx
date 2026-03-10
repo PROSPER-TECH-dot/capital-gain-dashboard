@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { Users, ArrowUpDown, Settings, Gift, Menu, X, BarChart3, ChevronRight, Ban, CheckCircle, Edit3, RotateCcw, Search } from 'lucide-react';
+import { Users, ArrowUpDown, Settings, Gift, Menu, X, BarChart3, ChevronRight, Ban, CheckCircle, Edit3, RotateCcw, Search, Link2 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { isAdmin, profiles, updateProfile } = useAuth();
@@ -55,6 +55,7 @@ const AdminDashboard = () => {
     { label: 'Users', icon: Users, path: '/admin/users' },
     { label: 'Transactions', icon: ArrowUpDown, path: '/admin/transactions' },
     { label: 'Gift Codes', icon: Gift, path: '/admin/gift-codes' },
+    { label: 'Referral Audit', icon: Link2, path: '/admin/referral-audit' },
     { label: 'Settings', icon: Settings, path: '/admin/settings' },
   ];
 

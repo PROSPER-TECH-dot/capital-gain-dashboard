@@ -180,10 +180,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateProfile = async (userId: string, updates: Partial<Profile>) => {
-    await supabase
+    const { error } = await supabase
       .from('profiles')
       .update(updates)
       .eq('user_id', userId);
+    if (error) {
+      console.error('updateProfile error:', error);
+      throw error;
+    }
     // Refresh
     if (userId === user?.id) await fetchProfile(userId);
     await refreshProfiles();

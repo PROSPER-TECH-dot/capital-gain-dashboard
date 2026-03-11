@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { ArrowLeft, ArrowDownCircle, Phone, Info } from 'lucide-react';
+import { ArrowLeft, ArrowDownCircle, Phone, Info, RefreshCw } from 'lucide-react'; // 🔹 EDIT HERE: added Refresh icon
 import Notification from '@/components/Notification';
 import { supabase } from '@/integrations/supabase/client';
 import airtelLogo from '@/assets/airtel-logo.png';
@@ -18,57 +18,60 @@ const RechargePage = () => {
   const [notification, setNotification] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [transactionId, setTransactionId] = useState<string | null>(null); // 🔹 EDIT HERE: store transaction id for manual refresh
+  const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const stopPolling = () => {
     if (pollingRef.current) {
-      clearInterval(pollingRef.current);
+      clearTimeout(pollingRef.current); // 🔹 EDIT HERE
       pollingRef.current = null;
     }
   };
 
-  const pollStatus = (transactionId: string) => {
-    let attempts = 0;
-    const maxAttempts = 8;
+  const checkTransactionStatus = async (txId: string) => { // 🔹 EDIT HERE: function for manual refresh
+    setProcessing(true);
+    setStatusMessage('Checking payment status...');
+    try {
+      const { data, error } = await supabase.functions.invoke('check-collection-status', {
+        body: { transaction_id: txId },
+      });
 
-    pollingRef.current = setInterval(async () => {
-      attempts++;
-      if (attempts >= maxAttempts) {
-        stopPolling();
+      if (error) {
+        setNotification(error.message || 'Error checking transaction status');
         setProcessing(false);
         setStatusMessage('');
-        setNotification('Payment timed out. Please check your transaction history.');
-        await refreshTransactions();
-        setTimeout(() => navigate('/home'), 2000);
         return;
       }
 
-      try {
-        const { data, error } = await supabase.functions.invoke('check-collection-status', {
-          body: { transaction_id: transactionId },
-        });
-
-        if (error) return;
-
-        if (data?.status === 'completed') {
-          stopPolling();
-          await refreshProfile();
-          await refreshTransactions();
-          setProcessing(false);
-          setStatusMessage('');
-          setNotification(`Recharged ${parseInt(amount).toLocaleString()} UGX successfully!`);
-          setTimeout(() => navigate('/home'), 1500);
-        } else if (data?.status === 'failed') {
-          stopPolling();
-          await refreshTransactions();
-          setProcessing(false);
-          setStatusMessage('');
-          setNotification(data?.message || 'Payment failed or was cancelled.');
-          setTimeout(() => navigate('/home'), 1500);
-        }
-      } catch (e) {
-        // Keep polling on network errors
+      if (data?.status === 'completed') {
+        await refreshProfile();
+        await refreshTransactions();
+        setProcessing(false);
+        setStatusMessage('');
+        setNotification(`Recharged ${parseInt(amount).toLocaleString()} UGX successfully!`);
+        setTimeout(() => navigate('/home'), 1500);
+      } else if (data?.status === 'failed') {
+        await refreshTransactions();
+        setProcessing(false);
+        setStatusMessage('');
+        setNotification(data?.message || 'Payment failed or was cancelled.');
+        setTimeout(() => navigate('/home'), 1500);
+      } else {
+        setProcessing(false);
+        setStatusMessage('');
+        setNotification('Payment is still pending. You can check again manually.');
       }
+    } catch (e: any) {
+      setProcessing(false);
+      setStatusMessage('');
+      setNotification(e.message || 'Network error. Try again.');
+    }
+  };
+
+  const pollStatus = (txId: string) => { // 🔹 EDIT HERE: initial single polling after sending payment
+    setTransactionId(txId); // save transactionId for manual refresh
+    pollingRef.current = setTimeout(() => {
+      checkTransactionStatus(txId); // run only once
     }, 1000);
   };
 
@@ -81,13 +84,16 @@ const RechargePage = () => {
   const handleRecharge = async () => {
     const amt = parseInt(amount);
     if (!amt || amt < settings.min_deposit) {
-      setNotification(`Minimum deposit is ${settings.min_deposit.toLocaleString()} UGX`); return;
+      setNotification(`Minimum deposit is ${settings.min_deposit.toLocaleString()} UGX`);
+      return;
     }
     if (!phone || phone.length < 10) {
-      setNotification('Please enter a valid phone number'); return;
+      setNotification('Please enter a valid phone number');
+      return;
     }
     if (!network) {
-      setNotification('Please select a network (Airtel or MTN)'); return;
+      setNotification('Please select a network (Airtel or MTN)');
+      return;
     }
 
     setProcessing(true);
@@ -188,6 +194,16 @@ const RechargePage = () => {
             {processing ? 'Processing...' : 'Recharge Now'}
           </button>
 
+          {/* 🔹 EDIT HERE: Improved Manual "Check Status" button */}
+          {transactionId && !processing && (
+            <button 
+              onClick={() => checkTransactionStatus(transactionId)}
+              className="w-full mt-4 py-3 rounded-2xl bg-gradient-to-r from-primary to-secondary text-white font-semibold flex items-center justify-center gap-2 shadow-lg hover:scale-105 transition-transform"
+            >
+              <RefreshCw size={18} /> Check Payment Status
+            </button>
+          )}
+
           <p className="text-[10px] text-center text-muted-foreground">
             Powered by Capital Gain Pay™ • Secure & Instant
           </p>
@@ -227,3 +243,5 @@ const RechargePage = () => {
 };
 
 export default RechargePage;
+
+  

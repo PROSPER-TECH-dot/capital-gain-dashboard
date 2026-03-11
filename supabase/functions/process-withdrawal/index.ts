@@ -24,13 +24,12 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     )
 
-    const token = authHeader.replace('Bearer ', '')
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token)
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
     }
 
-    const userId = claimsData.claims.sub as string
+    const userId = user.id
     const { phone, amount, fee_percent } = await req.json()
 
     if (!phone || !amount || amount < 1000) {
@@ -60,7 +59,7 @@ Deno.serve(async (req) => {
       .limit(1)
 
     if (!investments || investments.length === 0) {
-      return new Response(JSON.stringify({ error: 'Active investment required' }), { status: 400, headers: corsHeaders })
+      return new Response(JSON.stringify({ error: 'Active investment required to withdraw' }), { status: 400, headers: corsHeaders })
     }
 
     const feeAmount = amount * (fee_percent || 15) / 100
@@ -131,7 +130,8 @@ Deno.serve(async (req) => {
       amount_sent: amountAfterFee,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return new Response(JSON.stringify({ error: message }), { status: 500, headers: corsHeaders })
   }
 })

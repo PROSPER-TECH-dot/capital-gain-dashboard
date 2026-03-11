@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { ArrowLeft, ArrowDownCircle, Phone, Info, RefreshCw } from 'lucide-react'; // 🔹 EDIT HERE: added Refresh icon
+import { ArrowLeft, ArrowDownCircle, Phone, Info, RefreshCw } from 'lucide-react';
 import Notification from '@/components/Notification';
 import { supabase } from '@/integrations/supabase/client';
 import airtelLogo from '@/assets/airtel-logo.png';
@@ -18,17 +18,19 @@ const RechargePage = () => {
   const [notification, setNotification] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-  const [transactionId, setTransactionId] = useState<string | null>(null); // 🔹 EDIT HERE: store transaction id for manual refresh
-  const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [transactionId, setTransactionId] = useState<string | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Stop any ongoing polling
   const stopPolling = () => {
     if (pollingRef.current) {
-      clearTimeout(pollingRef.current); // 🔹 EDIT HERE
+      clearInterval(pollingRef.current);
       pollingRef.current = null;
     }
   };
 
-  const checkTransactionStatus = async (txId: string) => { // 🔹 EDIT HERE: function for manual refresh
+  // Check transaction status manually or via polling
+  const checkTransactionStatus = async (txId: string) => {
     setProcessing(true);
     setStatusMessage('Checking payment status...');
     try {
@@ -44,6 +46,7 @@ const RechargePage = () => {
       }
 
       if (data?.status === 'completed') {
+        stopPolling();
         await refreshProfile();
         await refreshTransactions();
         setProcessing(false);
@@ -51,6 +54,7 @@ const RechargePage = () => {
         setNotification(`Recharged ${parseInt(amount).toLocaleString()} UGX successfully!`);
         setTimeout(() => navigate('/home'), 1500);
       } else if (data?.status === 'failed') {
+        stopPolling();
         await refreshTransactions();
         setProcessing(false);
         setStatusMessage('');
@@ -68,15 +72,44 @@ const RechargePage = () => {
     }
   };
 
-  const pollStatus = (txId: string) => { // 🔹 EDIT HERE: initial single polling after sending payment
-    setTransactionId(txId); // save transactionId for manual refresh
-    pollingRef.current = setTimeout(() => {
-      checkTransactionStatus(txId); // run only once
-    }, 1000);
+  // Poll payment status automatically until success/failure
+  const pollStatus = (txId: string) => {
+    setTransactionId(txId);
+    let attempts = 0;
+    const maxAttempts = 10; // e.g., check 10 times
+    stopPolling(); // make sure no duplicate polling
+
+    pollingRef.current = setInterval(async () => {
+      attempts++;
+      const { data, error } = await supabase.functions.invoke('check-collection-status', {
+        body: { transaction_id: txId },
+      });
+
+      if (error) return;
+
+      if (data?.status === 'completed') {
+        stopPolling();
+        await refreshProfile();
+        await refreshTransactions();
+        setProcessing(false);
+        setStatusMessage('');
+        setNotification(`Recharged ${parseInt(amount).toLocaleString()} UGX successfully!`);
+        setTimeout(() => navigate('/home'), 1500);
+      } else if (data?.status === 'failed') {
+        stopPolling();
+        await refreshTransactions();
+        setProcessing(false);
+        setStatusMessage('');
+        setNotification(data?.message || 'Payment failed.');
+        setTimeout(() => navigate('/home'), 1500);
+      }
+
+      if (attempts >= maxAttempts) stopPolling();
+    }, 2000); // check every 2 seconds
   };
 
   useEffect(() => {
-    return () => stopPolling();
+    return () => stopPolling(); // clean up on unmount
   }, []);
 
   if (!user || !profile) return null;
@@ -134,13 +167,20 @@ const RechargePage = () => {
             <ArrowDownCircle size={20} className="text-primary" />
             <h2 className="text-sm font-semibold text-foreground">Recharge Amount</h2>
           </div>
-          <input type="number" value={amount} onChange={e => setAmount(e.target.value)}
+          <input
+            type="number"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
             className="w-full px-4 py-3 rounded-xl glass text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-            placeholder={`Min ${settings.min_deposit.toLocaleString()} UGX`} />
+            placeholder={`Min ${settings.min_deposit.toLocaleString()} UGX`}
+          />
           <div className="flex flex-wrap gap-2">
             {[10000, 20000, 50000, 100000, 200000, 500000].map(v => (
-              <button key={v} onClick={() => setAmount(v.toString())}
-                className="px-3 py-1.5 rounded-lg glass text-xs font-medium text-foreground hover:bg-primary/10 transition-colors">
+              <button
+                key={v}
+                onClick={() => setAmount(v.toString())}
+                className="px-3 py-1.5 rounded-lg glass text-xs font-medium text-foreground hover:bg-primary/10 transition-colors"
+              >
                 {v.toLocaleString()}
               </button>
             ))}
@@ -151,29 +191,37 @@ const RechargePage = () => {
               <Phone size={16} className="text-primary" />
               <label className="text-xs font-semibold text-foreground">Phone Number</label>
             </div>
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+            <input
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
               className="w-full px-4 py-3 rounded-xl glass text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="Enter your mobile money number e.g. 0771234567" />
+              placeholder="Enter your mobile money number e.g. 0771234567"
+            />
           </div>
 
           <div>
             <label className="text-xs font-semibold text-foreground mb-3 block">Select Network</label>
             <div className="grid grid-cols-2 gap-4">
-              <button onClick={() => setNetwork('airtel')}
+              <button
+                onClick={() => setNetwork('airtel')}
                 className={`py-5 px-4 rounded-2xl text-sm font-bold transition-all border-2 flex flex-col items-center gap-3 ${
                   network === 'airtel'
                     ? 'border-destructive bg-destructive/10 shadow-lg scale-[1.02]'
                     : 'border-border/30 glass hover:border-destructive/50'
-                }`}>
+                }`}
+              >
                 <img src={airtelLogo} alt="Airtel" className="w-14 h-14 object-contain" />
                 <span className="text-foreground font-semibold">Airtel Money</span>
               </button>
-              <button onClick={() => setNetwork('mtn')}
+              <button
+                onClick={() => setNetwork('mtn')}
                 className={`py-5 px-4 rounded-2xl text-sm font-bold transition-all border-2 flex flex-col items-center gap-3 ${
                   network === 'mtn'
                     ? 'border-yellow-500 bg-yellow-500/10 shadow-lg scale-[1.02]'
                     : 'border-border/30 glass hover:border-yellow-500/50'
-                }`}>
+                }`}
+              >
                 <img src={mtnLogo} alt="MTN" className="w-14 h-14 object-contain" />
                 <span className="text-foreground font-semibold">MTN MoMo</span>
               </button>
@@ -189,14 +237,16 @@ const RechargePage = () => {
             </div>
           )}
 
-          <button onClick={handleRecharge} disabled={processing}
-            className="w-full btn-accent py-3 text-sm disabled:opacity-50">
+          <button
+            onClick={handleRecharge}
+            disabled={processing}
+            className="w-full btn-accent py-3 text-sm disabled:opacity-50"
+          >
             {processing ? 'Processing...' : 'Recharge Now'}
           </button>
 
-          {/* 🔹 EDIT HERE: Improved Manual "Check Status" button */}
           {transactionId && !processing && (
-            <button 
+            <button
               onClick={() => checkTransactionStatus(transactionId)}
               className="w-full mt-4 py-3 rounded-2xl bg-gradient-to-r from-primary to-secondary text-white font-semibold flex items-center justify-center gap-2 shadow-lg hover:scale-105 transition-transform"
             >
@@ -209,6 +259,7 @@ const RechargePage = () => {
           </p>
         </div>
 
+        {/* Info Section */}
         <div className="glass-card rounded-2xl p-5 animate-fade-in">
           <div className="flex items-center gap-2 mb-3">
             <Info size={18} className="text-primary" />
@@ -242,6 +293,4 @@ const RechargePage = () => {
   );
 };
 
-export default RechargePage;
-
-  
+export default RechargePage;                   

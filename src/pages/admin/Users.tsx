@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { ArrowLeft, Search, Ban, CheckCircle, ChevronRight, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, Search, Ban, CheckCircle, ChevronRight, Plus, Minus, KeyRound } from 'lucide-react';
 import Notification from '@/components/Notification';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminUsers = () => {
   const { isAdmin, profiles, updateProfile, refreshProfiles } = useAuth();
@@ -14,6 +15,8 @@ const AdminUsers = () => {
   const [creditAmount, setCreditAmount] = useState('');
   const [creditField, setCreditField] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const [resettingPassword, setResettingPassword] = useState<string | null>(null);
+  const [newPasswordResult, setNewPasswordResult] = useState<string | null>(null);
 
   if (!isAdmin) { navigate('/'); return null; }
 
@@ -25,31 +28,90 @@ const AdminUsers = () => {
   );
 
   const handleCredit = async (userId: string, field: string, amount: number) => {
+    if (!amount || amount === 0) { setNotification('Please enter an amount'); return; }
     const prof = profiles.find(p => p.user_id === userId);
     if (!prof) return;
-    const current = Number((prof as any)[field]) || 0;
-    const newVal = current + amount;
-    if (newVal < 0) { setNotification('Balance cannot go below 0'); return; }
-    await updateProfile(userId, { [field]: newVal } as any);
 
-    // Log transaction for admin credit/debit
-    const txType = amount > 0 ? 'admin_credit' : 'admin_debit';
-    const txDesc = amount > 0 
-      ? `Admin credited ${Math.abs(amount).toLocaleString()} UGX to ${field.replace('_', ' ')}`
-      : `Admin debited ${Math.abs(amount).toLocaleString()} UGX from ${field.replace('_', ' ')}`;
-    
-    await addTransaction({
-      user_id: userId,
-      type: txType,
-      amount: Math.abs(amount),
-      status: 'completed',
-      description: txDesc,
-    });
+    try {
+      if (field === 'account_balance') {
+        const currentBalance = Number(prof.account_balance) || 0;
+        const currentIncome = Number(prof.cumulative_income) || 0;
+        const newBalance = currentBalance + amount;
+        if (newBalance < 0) { setNotification('Balance cannot go below 0'); return; }
 
-    await refreshProfiles();
-    setCreditAmount('');
-    setCreditField(null);
-    setNotification(`${amount > 0 ? 'Credited' : 'Debited'} ${Math.abs(amount).toLocaleString()} UGX successfully!`);
+        const updates: any = { account_balance: newBalance };
+        // Credit to account_balance also updates cumulative_income
+        if (amount > 0) {
+          updates.cumulative_income = currentIncome + amount;
+        }
+        await updateProfile(userId, updates);
+      } else if (field === 'recharge_balance') {
+        const currentRecharge = Number(prof.recharge_balance) || 0;
+        const currentBalance = Number(prof.account_balance) || 0;
+        const newRecharge = currentRecharge + amount;
+        const newBalance = currentBalance + amount;
+        if (newRecharge < 0) { setNotification('Recharge balance cannot go below 0'); return; }
+        if (newBalance < 0) { setNotification('Account balance cannot go below 0'); return; }
+
+        await updateProfile(userId, {
+          recharge_balance: newRecharge,
+          account_balance: newBalance,
+        } as any);
+      }
+
+      // Log transaction
+      const txType = amount > 0 ? 'admin_credit' : 'admin_debit';
+      const fieldLabel = field === 'account_balance' ? 'account balance' : 'recharge balance';
+      const txDesc = amount > 0
+        ? `Admin credited ${Math.abs(amount).toLocaleString()} UGX to ${fieldLabel}`
+        : `Admin debited ${Math.abs(amount).toLocaleString()} UGX from ${fieldLabel}`;
+
+      await addTransaction({
+        user_id: userId,
+        type: txType,
+        amount: Math.abs(amount),
+        status: 'completed',
+        description: txDesc,
+      });
+
+      await refreshProfiles();
+      setCreditAmount('');
+      setCreditField(null);
+      setNotification(`${amount > 0 ? 'Credited' : 'Debited'} ${Math.abs(amount).toLocaleString()} UGX successfully!`);
+    } catch (err: any) {
+      setNotification(`Failed: ${err.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleBanToggle = async (userId: string, currentlyBanned: boolean) => {
+    try {
+      await updateProfile(userId, { is_banned: !currentlyBanned });
+      await refreshProfiles();
+      setNotification(currentlyBanned ? 'User unbanned successfully!' : 'User banned successfully!');
+    } catch (err: any) {
+      setNotification(`Failed: ${err.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleResetPassword = async (userId: string, username: string) => {
+    setResettingPassword(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+        body: { target_user_id: userId },
+      });
+
+      if (error || !data?.success) {
+        setNotification(data?.error || error?.message || 'Password reset failed');
+        setResettingPassword(null);
+        return;
+      }
+
+      setNewPasswordResult(`New password for ${username}: ${data.new_password}`);
+      setNotification(`Password reset for ${username} successful!`);
+    } catch (err: any) {
+      setNotification(`Failed: ${err.message || 'Unknown error'}`);
+    }
+    setResettingPassword(null);
   };
 
   return (
@@ -68,6 +130,19 @@ const AdminUsers = () => {
             className="w-full pl-9 pr-4 py-2.5 rounded-xl glass text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             placeholder="Search by name, email, or phone..." />
         </div>
+
+        {/* Password Result Banner */}
+        {newPasswordResult && (
+          <div className="glass-card rounded-2xl p-4 border-2 border-primary/30 bg-primary/5">
+            <p className="text-xs font-bold text-primary mb-1">🔑 Password Reset Result</p>
+            <p className="text-sm font-mono text-foreground break-all">{newPasswordResult}</p>
+            <button onClick={() => {
+              navigator.clipboard.writeText(newPasswordResult.split(': ').pop() || '');
+              setNotification('Password copied!');
+            }} className="mt-2 text-xs text-primary font-semibold">📋 Copy Password</button>
+            <button onClick={() => setNewPasswordResult(null)} className="mt-2 ml-4 text-xs text-muted-foreground">Dismiss</button>
+          </div>
+        )}
 
         <div className="space-y-2">
           {filtered.map(u => (
@@ -89,11 +164,11 @@ const AdminUsers = () => {
                 <div className="mt-3 pt-3 border-t border-border/30 space-y-3 animate-fade-in">
                   <div className="grid grid-cols-3 gap-2 text-center">
                     {[
-                      { label: 'Account', field: 'account_balance', value: Number(u.account_balance) },
-                      { label: 'Recharge', field: 'recharge_balance', value: Number(u.recharge_balance) },
-                      { label: 'Income', field: 'cumulative_income', value: Number(u.cumulative_income) },
-                    ].map(({ label, field, value }) => (
-                      <div key={field} className="glass rounded-lg p-2">
+                      { label: 'Account', value: Number(u.account_balance) },
+                      { label: 'Recharge', value: Number(u.recharge_balance) },
+                      { label: 'Income', value: Number(u.cumulative_income) },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="glass rounded-lg p-2">
                         <p className="text-[10px] text-muted-foreground">{label}</p>
                         <p className="text-xs font-bold text-foreground">{value.toLocaleString()}</p>
                       </div>
@@ -126,7 +201,17 @@ const AdminUsers = () => {
                     )}
                   </div>
 
-                  <button onClick={() => updateProfile(u.user_id, { is_banned: !u.is_banned })}
+                  {/* Reset Password */}
+                  <button
+                    onClick={() => handleResetPassword(u.user_id, u.username)}
+                    disabled={resettingPassword === u.user_id}
+                    className="w-full py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 bg-secondary/20 text-foreground disabled:opacity-50">
+                    <KeyRound size={12} />
+                    {resettingPassword === u.user_id ? 'Resetting...' : 'Reset Password'}
+                  </button>
+
+                  {/* Ban/Unban */}
+                  <button onClick={() => handleBanToggle(u.user_id, u.is_banned)}
                     className={`w-full py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 ${
                       u.is_banned ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'
                     }`}>

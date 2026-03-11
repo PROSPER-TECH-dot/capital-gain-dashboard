@@ -3,13 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Eye, EyeOff, UserPlus, LogIn } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
+import Notification from '@/components/Notification';
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState<string | null>(null);
   const { login, register } = useAuth();
   const { settings } = useApp();
   const navigate = useNavigate();
@@ -34,14 +35,29 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    if (!loginId || !loginPass) { setError('Please fill all fields'); return; }
+    setNotification(null);
+    if (!loginId || !loginPass) { setNotification('Please fill all fields'); return; }
     setLoading(true);
     const result = await login(loginId, loginPass);
     setLoading(false);
-    if (result.error) setError(result.error);
-    else {
-      // Store welcome notification for home page
+    if (result.error) {
+      // Show user-friendly error messages
+      const err = result.error.toLowerCase();
+      if (err.includes('invalid login') || err.includes('invalid credentials') || err.includes('password')) {
+        const isEmail = loginId.includes('@');
+        setNotification(isEmail ? 'Incorrect email or password' : 'Incorrect username or password');
+      } else if (err.includes('not found')) {
+        const isEmail = loginId.includes('@');
+        setNotification(isEmail ? 'No account found with this email' : 'No account found with this username');
+      } else if (err.includes('banned')) {
+        setNotification('Your account has been banned. Contact support.');
+      } else if (err.includes('edge function') || err.includes('2xx') || err.includes('non-2xx')) {
+        const isEmail = loginId.includes('@');
+        setNotification(isEmail ? 'Incorrect email or password' : 'Incorrect username or password');
+      } else {
+        setNotification('Login failed. Please check your credentials and try again.');
+      }
+    } else {
       sessionStorage.setItem('login_welcome', loginId);
       navigate('/home');
     }
@@ -49,17 +65,22 @@ const Auth = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setNotification(null);
     if (!regUsername || !regEmail || !regPhone || !regPass || !regConfirm) {
-      setError('Please fill all required fields'); return;
+      setNotification('Please fill all required fields'); return;
     }
-    if (regPass !== regConfirm) { setError('Passwords do not match'); return; }
-    if (regPass.length < 6) { setError('Password must be at least 6 characters'); return; }
+    if (regPass !== regConfirm) { setNotification('Passwords do not match'); return; }
+    if (regPass.length < 6) { setNotification('Password must be at least 6 characters'); return; }
     setLoading(true);
     const result = await register({ username: regUsername, email: regEmail, phone: regPhone, password: regPass, referralCode: regReferral || undefined });
     setLoading(false);
-    if (result.error) setError(result.error);
-    else {
+    if (result.error) {
+      if (result.error.toLowerCase().includes('already')) {
+        setNotification(result.error);
+      } else {
+        setNotification(result.error);
+      }
+    } else {
       sessionStorage.setItem('register_success', '1');
       navigate('/home');
     }
@@ -67,6 +88,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 gradient-hero">
+      {notification && <Notification message={notification} onClose={() => setNotification(null)} />}
       <div className="w-full max-w-md animate-scale-in">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold font-heading text-primary-foreground flex items-baseline justify-center">
@@ -78,7 +100,7 @@ const Auth = () => {
         <div className="glass rounded-2xl p-6">
           <div className="flex mb-6 rounded-xl overflow-hidden glass-card">
             <button
-              onClick={() => { setIsLogin(true); setError(''); }}
+              onClick={() => { setIsLogin(true); setNotification(null); }}
               className={`flex-1 py-3 text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
                 isLogin ? 'gradient-primary text-primary-foreground' : 'text-muted-foreground'
               }`}
@@ -86,7 +108,7 @@ const Auth = () => {
               <LogIn size={16} /> Login
             </button>
             <button
-              onClick={() => { setIsLogin(false); setError(''); }}
+              onClick={() => { setIsLogin(false); setNotification(null); }}
               className={`flex-1 py-3 text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
                 !isLogin ? 'gradient-primary text-primary-foreground' : 'text-muted-foreground'
               }`}
@@ -94,12 +116,6 @@ const Auth = () => {
               <UserPlus size={16} /> Register
             </button>
           </div>
-
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm font-medium">
-              {error}
-            </div>
-          )}
 
           {isLogin ? (
             <form onSubmit={handleLogin} className="space-y-4">

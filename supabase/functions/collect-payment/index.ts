@@ -24,13 +24,12 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     )
 
-    const token = authHeader.replace('Bearer ', '')
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token)
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
     }
 
-    const userId = claimsData.claims.sub as string
+    const userId = user.id
     const { phone, amount, network } = await req.json()
 
     if (!phone || !amount || amount < 1000) {
@@ -95,7 +94,8 @@ Deno.serve(async (req) => {
       message: 'STK push sent to your phone. Please enter your PIN to confirm.',
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return new Response(JSON.stringify({ error: message }), { status: 500, headers: corsHeaders })
   }
 })

@@ -32,7 +32,7 @@ const WithdrawalPage = () => {
       setNotification(`Minimum withdrawal is ${settings.min_withdrawal.toLocaleString()} UGX`); return;
     }
     if (amt > profile.account_balance) {
-      setNotification('Insufficient balance'); return;
+      setNotification('Insufficient balance. Your account balance is not enough for this withdrawal.'); return;
     }
     if (!phone || phone.length < 10) {
       setNotification('Please enter a valid phone number'); return;
@@ -46,7 +46,20 @@ const WithdrawalPage = () => {
       });
 
       if (error || !data?.success) {
-        setNotification(data?.error || error?.message || 'Withdrawal failed');
+        // Show user-friendly error messages
+        const errMsg = data?.error || error?.message || '';
+        const errLower = errMsg.toLowerCase();
+        if (errLower.includes('insufficient') || errLower.includes('balance')) {
+          setNotification('Insufficient balance. Your account balance is not enough for this withdrawal.');
+        } else if (errLower.includes('active investment')) {
+          setNotification('You need an active investment to withdraw funds.');
+        } else if (errLower.includes('edge function') || errLower.includes('2xx') || errLower.includes('non-2xx')) {
+          setNotification('Withdrawal failed. Please try again later.');
+        } else if (errMsg) {
+          setNotification(errMsg);
+        } else {
+          setNotification('Withdrawal failed. Please try again later.');
+        }
         setProcessing(false);
         return;
       }
@@ -58,9 +71,9 @@ const WithdrawalPage = () => {
       setProcessing(false);
       setNotification(data.message || `Withdrew ${amountAfterFee.toLocaleString()} UGX successfully!`);
       setTimeout(() => navigate('/home'), 2000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setProcessing(false);
-      setNotification(e.message || 'Something went wrong');
+      setNotification('Withdrawal failed. Please try again later.');
     }
   };
 
@@ -72,7 +85,6 @@ const WithdrawalPage = () => {
         <h1 className="text-lg font-bold font-heading text-primary-foreground">Withdrawal</h1>
       </div>
       <div className="px-4 -mt-4 space-y-4">
-        {/* Available Balance */}
         <div className="glass-card rounded-2xl p-5 animate-fade-in">
           <div className="flex items-center gap-2 mb-2">
             <Wallet size={20} className="text-primary" />
@@ -82,7 +94,6 @@ const WithdrawalPage = () => {
           <p className="text-xs text-muted-foreground mt-1">Active Investments: {userActiveInvestments.length}</p>
         </div>
 
-        {/* Withdraw Form */}
         <div className="glass-card rounded-2xl p-5 animate-fade-in">
           <div className="flex items-center gap-2 mb-4">
             <ArrowUpCircle size={20} className="text-accent" />
@@ -151,7 +162,6 @@ const WithdrawalPage = () => {
                 {processing ? 'Processing...' : 'Withdraw Now'}
               </button>
 
-              {/* View Withdrawal History Link */}
               <button onClick={() => navigate('/history?filter=withdrawal')}
                 className="w-full mt-3 flex items-center justify-center gap-2 text-primary text-xs font-medium hover:text-primary/80 transition-colors">
                 <Clock size={14} /> View Withdrawal History
@@ -164,7 +174,6 @@ const WithdrawalPage = () => {
           )}
         </div>
 
-        {/* Withdrawal Instructions */}
         <div className="glass-card rounded-2xl p-5 animate-fade-in">
           <div className="flex items-center gap-2 mb-3">
             <Info size={18} className="text-primary" />

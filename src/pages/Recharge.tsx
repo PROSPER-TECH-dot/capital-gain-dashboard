@@ -12,6 +12,7 @@ const RechargePage = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { settings, refreshTransactions } = useApp();
   const navigate = useNavigate();
+
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
   const [network, setNetwork] = useState<'airtel' | 'mtn' | null>(null);
@@ -19,9 +20,10 @@ const RechargePage = () => {
   const [processing, setProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [transactionId, setTransactionId] = useState<string | null>(null);
+
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Stop any ongoing polling
+  // 🔹 EDIT: Stop ongoing polling
   const stopPolling = () => {
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
@@ -29,10 +31,11 @@ const RechargePage = () => {
     }
   };
 
-  // Check transaction status manually or via polling
+  // 🔹 EDIT: Check transaction status ONLY after user finishes transaction
   const checkTransactionStatus = async (txId: string) => {
     setProcessing(true);
-    setStatusMessage('Checking payment status...');
+    setStatusMessage('Checking payment status...'); // temporary spinner only
+
     try {
       const { data, error } = await supabase.functions.invoke('check-collection-status', {
         body: { transaction_id: txId },
@@ -51,19 +54,20 @@ const RechargePage = () => {
         await refreshTransactions();
         setProcessing(false);
         setStatusMessage('');
-        setNotification(`Recharged ${parseInt(amount).toLocaleString()} UGX successfully!`);
+        setNotification(`✅ Recharge of ${parseInt(amount).toLocaleString()} UGX successful!`);
         setTimeout(() => navigate('/home'), 1500);
       } else if (data?.status === 'failed') {
         stopPolling();
         await refreshTransactions();
         setProcessing(false);
         setStatusMessage('');
-        setNotification(data?.message || 'Payment failed or was cancelled.');
-        setTimeout(() => navigate('/home'), 1500);
+        setNotification('❌ Payment failed. Check transaction history.');
+        // 🔹 EDIT: do NOT redirect automatically; keep user on page
       } else {
+        // 🔹 EDIT: Pending transactions stay pending forever
         setProcessing(false);
         setStatusMessage('');
-        setNotification('Payment is still pending. You can check again manually.');
+        setNotification('⏳ Payment is still pending. You can check again manually.');
       }
     } catch (e: any) {
       setProcessing(false);
@@ -72,12 +76,12 @@ const RechargePage = () => {
     }
   };
 
-  // Poll payment status automatically until success/failure
+  // 🔹 EDIT: Polling backup removed automatic notifications — user must check manually
   const pollStatus = (txId: string) => {
     setTransactionId(txId);
+    stopPolling();
     let attempts = 0;
-    const maxAttempts = 10; // e.g., check 10 times
-    stopPolling(); // make sure no duplicate polling
+    const maxAttempts = 15;
 
     pollingRef.current = setInterval(async () => {
       attempts++;
@@ -87,29 +91,16 @@ const RechargePage = () => {
 
       if (error) return;
 
-      if (data?.status === 'completed') {
+      if (data?.status === 'completed' || data?.status === 'failed') {
         stopPolling();
-        await refreshProfile();
-        await refreshTransactions();
-        setProcessing(false);
-        setStatusMessage('');
-        setNotification(`Recharged ${parseInt(amount).toLocaleString()} UGX successfully!`);
-        setTimeout(() => navigate('/home'), 1500);
-      } else if (data?.status === 'failed') {
-        stopPolling();
-        await refreshTransactions();
-        setProcessing(false);
-        setStatusMessage('');
-        setNotification(data?.message || 'Payment failed.');
-        setTimeout(() => navigate('/home'), 1500);
       }
 
       if (attempts >= maxAttempts) stopPolling();
-    }, 2000); // check every 2 seconds
+    }, 2000);
   };
 
   useEffect(() => {
-    return () => stopPolling(); // clean up on unmount
+    return () => stopPolling(); // cleanup
   }, []);
 
   if (!user || !profile) return null;
@@ -144,9 +135,11 @@ const RechargePage = () => {
         return;
       }
 
-      setStatusMessage('STK push sent! Enter your PIN on your phone to confirm...');
-      setNotification('Payment request sent to your phone. Please enter your PIN.');
-      pollStatus(data.transaction_id);
+      // 🔹 EDIT: Remove preemptive notification! User must finish STK push first
+      setTransactionId(data.transaction_id);
+      pollStatus(data.transaction_id); // 🔹 start polling silently as backup
+      setProcessing(false);
+      setStatusMessage('');
     } catch (e: any) {
       setProcessing(false);
       setStatusMessage('');
@@ -245,6 +238,7 @@ const RechargePage = () => {
             {processing ? 'Processing...' : 'Recharge Now'}
           </button>
 
+          {/* 🔹 EDIT: Manual "Check Payment Status" button */}
           {transactionId && !processing && (
             <button
               onClick={() => checkTransactionStatus(transactionId)}
@@ -280,11 +274,11 @@ const RechargePage = () => {
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">4</span>
-              <p><span className="text-foreground font-medium">Tap "Recharge Now"</span> — An STK push will be sent to your phone. Enter your PIN to confirm.</p>
+              <p><span className="text-foreground font-medium">Tap "Recharge Now"</span> — Wait for STK push and complete transaction.</p>
             </div>
             <div className="flex gap-3">
               <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">5</span>
-              <p><span className="text-foreground font-medium">Wait for confirmation</span> — Your balance updates automatically and you'll be redirected home.</p>
+              <p><span className="text-foreground font-medium">Wait for confirmation</span> — Your balance updates automatically via webhook after you complete STK push. Pending stays until confirmed.</p>
             </div>
           </div>
         </div>
@@ -293,4 +287,4 @@ const RechargePage = () => {
   );
 };
 
-export default RechargePage;                   
+export default RechargePage;                       

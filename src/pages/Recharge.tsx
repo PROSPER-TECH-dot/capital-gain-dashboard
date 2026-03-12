@@ -1,290 +1,41 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { useApp } from '@/context/AppContext';
-import { ArrowLeft, ArrowDownCircle, Phone, Info, RefreshCw } from 'lucide-react';
-import Notification from '@/components/Notification';
-import { supabase } from '@/integrations/supabase/client';
-import airtelLogo from '@/assets/airtel-logo.png';
-import mtnLogo from '@/assets/mtn-logo.png';
+import React from "react";
 
 const RechargePage = () => {
-  const { user, profile, refreshProfile } = useAuth();
-  const { settings, refreshTransactions } = useApp();
-  const navigate = useNavigate();
-
-  const [amount, setAmount] = useState('');
-  const [phone, setPhone] = useState('');
-  const [network, setNetwork] = useState<'airtel' | 'mtn' | null>(null);
-  const [notification, setNotification] = useState<string | null>(null);
-  const [processing, setProcessing] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [transactionId, setTransactionId] = useState<string | null>(null);
-
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // 🔹 EDIT: Stop ongoing polling
-  const stopPolling = () => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-      pollingRef.current = null;
-    }
-  };
-
-  // 🔹 EDIT: Check transaction status ONLY after user finishes transaction
-  const checkTransactionStatus = async (txId: string) => {
-    setProcessing(true);
-    setStatusMessage('Checking payment status...'); // temporary spinner only
-
-    try {
-      const { data, error } = await supabase.functions.invoke('check-collection-status', {
-        body: { transaction_id: txId },
-      });
-
-      if (error) {
-        setNotification(error.message || 'Error checking transaction status');
-        setProcessing(false);
-        setStatusMessage('');
-        return;
-      }
-
-      if (data?.status === 'completed') {
-        stopPolling();
-        await refreshProfile();
-        await refreshTransactions();
-        setProcessing(false);
-        setStatusMessage('');
-        setNotification(`✅ Recharge of ${parseInt(amount).toLocaleString()} UGX successful!`);
-        setTimeout(() => navigate('/home'), 1500);
-      } else if (data?.status === 'failed') {
-        stopPolling();
-        await refreshTransactions();
-        setProcessing(false);
-        setStatusMessage('');
-        setNotification('❌ Payment failed. Check transaction history.');
-        // 🔹 EDIT: do NOT redirect automatically; keep user on page
-      } else {
-        // 🔹 EDIT: Pending transactions stay pending forever
-        setProcessing(false);
-        setStatusMessage('');
-        setNotification('⏳ Payment is still pending. You can check again manually.');
-      }
-    } catch (e: any) {
-      setProcessing(false);
-      setStatusMessage('');
-      setNotification(e.message || 'Network error. Try again.');
-    }
-  };
-
-  // 🔹 EDIT: Polling backup removed automatic notifications — user must check manually
-  const pollStatus = (txId: string) => {
-    setTransactionId(txId);
-    stopPolling();
-    let attempts = 0;
-    const maxAttempts = 15;
-
-    pollingRef.current = setInterval(async () => {
-      attempts++;
-      const { data, error } = await supabase.functions.invoke('check-collection-status', {
-        body: { transaction_id: txId },
-      });
-
-      if (error) return;
-
-      if (data?.status === 'completed' || data?.status === 'failed') {
-        stopPolling();
-      }
-
-      if (attempts >= maxAttempts) stopPolling();
-    }, 2000);
-  };
-
-  useEffect(() => {
-    return () => stopPolling(); // cleanup
-  }, []);
-
-  if (!user || !profile) return null;
-
-  const handleRecharge = async () => {
-    const amt = parseInt(amount);
-    if (!amt || amt < settings.min_deposit) {
-      setNotification(`Minimum deposit is ${settings.min_deposit.toLocaleString()} UGX`);
-      return;
-    }
-    if (!phone || phone.length < 10) {
-      setNotification('Please enter a valid phone number');
-      return;
-    }
-    if (!network) {
-      setNotification('Please select a network (Airtel or MTN)');
-      return;
-    }
-
-    setProcessing(true);
-    setStatusMessage('Sending payment request to your phone...');
-
-    try {
-      const { data, error } = await supabase.functions.invoke('collect-payment', {
-        body: { phone, amount: amt, network },
-      });
-
-      if (error || !data?.success) {
-        setProcessing(false);
-        setStatusMessage('');
-        setNotification(data?.error || error?.message || 'Payment request failed');
-        return;
-      }
-
-      // 🔹 EDIT: Remove preemptive notification! User must finish STK push first
-      setTransactionId(data.transaction_id);
-      pollStatus(data.transaction_id); // 🔹 start polling silently as backup
-      setProcessing(false);
-      setStatusMessage('');
-    } catch (e: any) {
-      setProcessing(false);
-      setStatusMessage('');
-      setNotification(e.message || 'Something went wrong');
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {notification && <Notification message={notification} onClose={() => setNotification(null)} />}
-      <div className="gradient-hero p-4 pb-8 rounded-b-3xl flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="text-primary-foreground"><ArrowLeft size={22} /></button>
-        <h1 className="text-lg font-bold font-heading text-primary-foreground">Recharge</h1>
+    <div style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "80vh",
+      flexDirection: "column",
+      textAlign: "center",
+      padding: "20px"
+    }}>
+      
+      <h1 style={{ fontSize: "28px", color: "#ff4444", marginBottom: "10px" }}>
+        Deposits Temporarily Disabled
+      </h1>
+
+      <p style={{ fontSize: "16px", maxWidth: "500px", lineHeight: "1.6" }}>
+        We are currently performing maintenance on our payment system.
+        Deposits are temporarily unavailable while we resolve a payment gateway issue.
+      </p>
+
+      <p style={{ marginTop: "15px", fontWeight: "bold" }}>
+        Please try again later.
+      </p>
+
+      <div style={{
+        marginTop: "30px",
+        padding: "15px 25px",
+        backgroundColor: "#f5f5f5",
+        borderRadius: "8px"
+      }}>
+        <strong>Status:</strong> Payment system under maintenance
       </div>
-      <div className="px-4 -mt-4 space-y-4">
-        <div className="glass-card rounded-2xl p-5 animate-fade-in space-y-4">
-          <div className="flex items-center gap-2">
-            <ArrowDownCircle size={20} className="text-primary" />
-            <h2 className="text-sm font-semibold text-foreground">Recharge Amount</h2>
-          </div>
-          <input
-            type="number"
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl glass text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-            placeholder={`Min ${settings.min_deposit.toLocaleString()} UGX`}
-          />
-          <div className="flex flex-wrap gap-2">
-            {[10000, 20000, 50000, 100000, 200000, 500000].map(v => (
-              <button
-                key={v}
-                onClick={() => setAmount(v.toString())}
-                className="px-3 py-1.5 rounded-lg glass text-xs font-medium text-foreground hover:bg-primary/10 transition-colors"
-              >
-                {v.toLocaleString()}
-              </button>
-            ))}
-          </div>
 
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Phone size={16} className="text-primary" />
-              <label className="text-xs font-semibold text-foreground">Phone Number</label>
-            </div>
-            <input
-              type="tel"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl glass text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="Enter your mobile money number e.g. 0771234567"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-foreground mb-3 block">Select Network</label>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setNetwork('airtel')}
-                className={`py-5 px-4 rounded-2xl text-sm font-bold transition-all border-2 flex flex-col items-center gap-3 ${
-                  network === 'airtel'
-                    ? 'border-destructive bg-destructive/10 shadow-lg scale-[1.02]'
-                    : 'border-border/30 glass hover:border-destructive/50'
-                }`}
-              >
-                <img src={airtelLogo} alt="Airtel" className="w-14 h-14 object-contain" />
-                <span className="text-foreground font-semibold">Airtel Money</span>
-              </button>
-              <button
-                onClick={() => setNetwork('mtn')}
-                className={`py-5 px-4 rounded-2xl text-sm font-bold transition-all border-2 flex flex-col items-center gap-3 ${
-                  network === 'mtn'
-                    ? 'border-yellow-500 bg-yellow-500/10 shadow-lg scale-[1.02]'
-                    : 'border-border/30 glass hover:border-yellow-500/50'
-                }`}
-              >
-                <img src={mtnLogo} alt="MTN" className="w-14 h-14 object-contain" />
-                <span className="text-foreground font-semibold">MTN MoMo</span>
-              </button>
-            </div>
-          </div>
-
-          {statusMessage && (
-            <div className="glass rounded-xl p-3 text-center">
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs font-medium text-primary">{statusMessage}</p>
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={handleRecharge}
-            disabled={processing}
-            className="w-full btn-accent py-3 text-sm disabled:opacity-50"
-          >
-            {processing ? 'Processing...' : 'Recharge Now'}
-          </button>
-
-          {/* 🔹 EDIT: Manual "Check Payment Status" button */}
-          {transactionId && !processing && (
-            <button
-              onClick={() => checkTransactionStatus(transactionId)}
-              className="w-full mt-4 py-3 rounded-2xl bg-gradient-to-r from-primary to-secondary text-white font-semibold flex items-center justify-center gap-2 shadow-lg hover:scale-105 transition-transform"
-            >
-              <RefreshCw size={18} /> Check Payment Status
-            </button>
-          )}
-
-          <p className="text-[10px] text-center text-muted-foreground">
-            Powered by Capital Gain Pay™ • Secure & Instant
-          </p>
-        </div>
-
-        {/* Info Section */}
-        <div className="glass-card rounded-2xl p-5 animate-fade-in">
-          <div className="flex items-center gap-2 mb-3">
-            <Info size={18} className="text-primary" />
-            <h2 className="text-sm font-semibold font-heading text-foreground">How to Deposit</h2>
-          </div>
-          <div className="space-y-3 text-xs text-muted-foreground">
-            <div className="flex gap-3">
-              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-              <p><span className="text-foreground font-medium">Enter the amount</span> — Minimum deposit is {settings.min_deposit.toLocaleString()} UGX.</p>
-            </div>
-            <div className="flex gap-3">
-              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-              <p><span className="text-foreground font-medium">Enter your phone number</span> — Input the mobile money number you want to pay from.</p>
-            </div>
-            <div className="flex gap-3">
-              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-              <p><span className="text-foreground font-medium">Select your network</span> — Choose Airtel Money or MTN MoMo.</p>
-            </div>
-            <div className="flex gap-3">
-              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">4</span>
-              <p><span className="text-foreground font-medium">Tap "Recharge Now"</span> — Wait for STK push and complete transaction.</p>
-            </div>
-            <div className="flex gap-3">
-              <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">5</span>
-              <p><span className="text-foreground font-medium">Wait for confirmation</span> — Your balance updates automatically via webhook after you complete STK push. Pending stays until confirmed.</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
 
-export default RechargePage;                       
+export default RechargePage;                
